@@ -8,8 +8,8 @@ import java.util.LinkedList;
 import ru.jango.j0loader.Request;
 
 /**
- * Своеобразная реализация паттерна Итератор. {@link #next()} - возвращает следующий в очереди элемент.
- * По умолчанию (в данном классе) элементы из очереди берутся просто подряд. 
+ * Some kind of Iterator pattern. {@link #next()} - returns next queue element.
+ * By default (this class) elements are taken just in sequence.
  */
 public class DefaultQueue implements Queue, Iterable<Request> {
 
