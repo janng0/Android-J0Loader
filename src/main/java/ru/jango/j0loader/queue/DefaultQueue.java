@@ -8,8 +8,8 @@ import java.util.LinkedList;
 import ru.jango.j0loader.Request;
 
 /**
- * Some kind of Iterator pattern. {@link #next()} - returns next queue element.
- * By default (this class) elements are taken just in sequence.
+ * Default implementation of the {@link ru.jango.j0loader.queue.Queue} interface. All methods are
+ * declared as 'synchronized' for safer asynchronous use.
  */
 public class DefaultQueue implements Queue, Iterable<Request> {
 
@@ -28,11 +28,8 @@ public class DefaultQueue implements Queue, Iterable<Request> {
 	@Override
 	public synchronized Request next() {
 		if (!queue.isEmpty()) {
-			final Request request = queue.get(0);
-			remove();
-			
-			current = request;
-			return request;
+			current = remove();
+			return current;
 		}
 		
 		return null;
@@ -64,7 +61,16 @@ public class DefaultQueue implements Queue, Iterable<Request> {
 		if (requests != null && !requests.isEmpty()) 
 			queue.addAll(requests);
 	}
-	
+
+    @Override
+    public synchronized boolean insert(int pos, Request request) {
+        if (request == null || pos < 0 || pos > queue.size())
+            return false;
+
+        queue.add(pos, request);
+        return true;
+    }
+
 	@Override
 	public synchronized boolean isEmpty() {
 		return queue.isEmpty();
@@ -73,6 +79,7 @@ public class DefaultQueue implements Queue, Iterable<Request> {
 	@Override
 	public synchronized void clear() {
 		queue.clear();
+        current = null;
 	}
 	
 	@Override

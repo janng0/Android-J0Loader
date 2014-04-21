@@ -12,12 +12,14 @@ import android.net.Uri;
 import ru.jango.j0loader.part.Part;
 
 /**
- *	Класс-контейнер для необходимой для загрузки информации: <br>
- *	-- хранит в себе собственно саму {@link java.net.URI} <br>
- *	-- хранит параметры запроса для нее <br>
- *	-- хранит объем данных в байтах, которые находятся по адресу, 
- *		описанному этим {@link java.net.URI} (типа content-length в случае
- *		HTTP-запросов, или еще что-то в противном случае)
+ * Class-container for information, needed for loaders to work: <br>
+ * <ul>
+ * <li> {@link java.net.URI} of the request destination </li>
+ * <li> {@link java.util.List}<{@link ru.jango.j0loader.part.Part}> with request parameters
+ * (for HTTP POST and GET) </li>
+ * <li> size of the response data in bytes (value of HTTP response 'content-length' header,
+ * file size, etc.; -1 if the data size is unknown or unavailable) </li>
+ * </ul>
  */
 public class Request {
 	
@@ -38,7 +40,7 @@ public class Request {
 	}
 	
 	public Request(URI uri, long contentLength, List<Part> params) throws URISyntaxException  {
-		this.uri = new URI(Uri.encode(Uri.decode(uri.toString()),":/?="));;
+		this.uri = new URI(Uri.encode(Uri.decode(uri.toString()),":/?="));
 		this.contentLength = contentLength;
 		this.params = params;
 	}
@@ -51,6 +53,7 @@ public class Request {
 	
 	public URI getURI() { return uri; }
 	public URL getURL() throws URISyntaxException, MalformedURLException { return getURI().toURL(); }
+
 	@Override
 	public String toString() { return uri.toString(); }
 }

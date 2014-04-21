@@ -66,7 +66,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 			else getQueue().add(request);
 		}
 		
-		executeQueue();
+		start();
 	}
 	
 	@Override
@@ -79,7 +79,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 			}
 		}
 		
-		executeQueue();
+		start();
 	}
 	
 	@Override
@@ -89,8 +89,8 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	}
 	
 	@Override
-	public void executeQueue()  {
-		super.executeQueue();
+	public void start()  {
+		super.start();
 		
 		final Thread thread = getCacheLoaderThread();
 		if (!thread.isAlive()) thread.start();
@@ -159,8 +159,8 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	 * Возвращает загрузчик в исходное состояние: <br>
 	 * -- отдает команду потоку загрузки остановиться (реально поток 
 	 * может остановиться не сразу) <br>
-	 * -- очищает кэш
-	 * -- очищает очередь загрузки
+	 * -- очищает кэш <br>
+	 * -- очищает очередь загрузки <br>
 	 * -- очищает очередь загрузки из кэша
 	 */
 	public void reset() {
@@ -389,7 +389,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	private Runnable cacheQueueRunnable = new Runnable() {
 		@Override
 		public void run()  {
-			while (!isCacheQueueEmpty() && isWorking()) {
+			while (!isCacheQueueEmpty() && canWork()) {
 				final Request request = getCacheQueue().next();
 				
 				try {

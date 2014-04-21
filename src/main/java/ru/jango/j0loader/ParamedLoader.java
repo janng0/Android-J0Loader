@@ -70,7 +70,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 		
 		for (byte[] entity : entities) {
 			offset = 0;
-			while (offset < entity.length && isWorking()) {
+			while (offset < entity.length && canWork()) {
 				count = Math.min(entity.length - offset, BUFFER_SIZE_BYTES);
 				out.write(entity, offset, count);
 				offset += count;
