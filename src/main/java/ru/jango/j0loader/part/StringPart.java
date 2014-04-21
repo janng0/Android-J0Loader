@@ -1,5 +1,9 @@
 package ru.jango.j0loader.part;
 
+/**
+ * A {@link ru.jango.j0loader.part.Part} wrapper for plain text data. Default content type -
+ * 'text/plain; charset=UTF-8'.
+ */
 public class StringPart extends Part {
 	
 	private String data;

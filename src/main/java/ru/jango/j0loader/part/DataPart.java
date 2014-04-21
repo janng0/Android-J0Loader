@@ -1,5 +1,9 @@
 package ru.jango.j0loader.part;
 
+/**
+ * A {@link ru.jango.j0loader.part.Part} wrapper for raw data. Default content type -
+ * 'application/octet-stream'.
+ */
 public class DataPart extends Part {
 	
 	private String filename;

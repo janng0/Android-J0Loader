@@ -10,28 +10,34 @@ import java.util.ArrayList;
 
 import ru.jango.j0loader.part.Part;
 
+/**
+ * Parametrized loader. A loader, witch allows not only to download data, but also to upload it.
+ * Parameters for sending should be backed as a {@link java.util.List}<{@link ru.jango.j0loader.part.Part}> and
+ * passed inside a {@link ru.jango.j0loader.Request} object.
+ *
+ * @param <T>   after postprocessing of the loaded data an object of type T will be created and passed into
+ *              {@link ru.jango.j0loader.DataLoader.LoadingListener#loadingFinished(Request, byte[], Object)}
+ */
 public abstract class ParamedLoader<T> extends DataLoader<T> {
-
-	public ParamedLoader() {
-		super();
-	}
+    // TODO look through the List<Part> and use HTTP GET in certain cases (not always POST)
 
 	@Override
 	protected InputStream openInputStream(Request request) throws IOException, URISyntaxException {
 		final HttpURLConnection urlConnection = (HttpURLConnection) request.getURL().openConnection();
-		configHttpPOSTConnection(urlConnection);
+        configURLConnection(urlConnection);
 		sendParams(request, urlConnection);
 
 		request.setContentLength(urlConnection.getContentLength());
 		return urlConnection.getInputStream();
 	}
 
-	private void configHttpPOSTConnection(HttpURLConnection urlConnection) throws ProtocolException {
-		urlConnection.setUseCaches(false);
+    /**
+     * Applies configurations to specified {@link java.net.HttpURLConnection}.
+     */
+	protected void configURLConnection(HttpURLConnection urlConnection) throws ProtocolException {
+        super.configURLConnection(urlConnection);
+
 		urlConnection.setDoOutput(true);
-		urlConnection.setDoInput(true);
-		urlConnection.setConnectTimeout(15000);
-		urlConnection.setReadTimeout(10000);
 		urlConnection.setRequestMethod("POST");
 		urlConnection.setRequestProperty("Connection", "Keep-Alive");
 		urlConnection.setRequestProperty("Cache-Control", "no-cache");
@@ -42,8 +48,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 		final OutputStream out = urlConnection.getOutputStream();          
 		out.write((Part.HYPHENS + Part.BOUNDARY + Part.RN).getBytes("UTF-8"));
 		
-		// сгенерить сущности; запомнить их, чтобы еще раз не генерить; 
-		// посчитать общий объем данных по сгенеренным сущностям
+		// generate entities and count content length for uploading
         final ArrayList<byte[]> entities = new ArrayList<byte[]>();
         long totalBytes = 0;
 		for (Part part : request.getRequestParams()) {
@@ -56,21 +61,22 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 					+ "totalBytes: " + totalBytes + "bytes");
         
 		writeEntities(request, out, entities, totalBytes);
-        out.close();
+        try { out.close(); } catch(Exception ignored) {}
 	}
 	
-	/** 
-	 * Залить сущности в выходной поток; параллельно пинговать слушателя.
+	/**
+     * Write entities into specified {@link java.io.OutputStream}. Also automatically calls
+     * {@link #postMainUploadingUpdateProgress(Request, long, long)} during the work; handles
+     * {@link #canWork()} and {@link #isCurrentCancelled()} flags.
 	 */
-	private void writeEntities(Request request, OutputStream out, ArrayList<byte[]> entities, long totalBytes) throws IOException {
+	protected void writeEntities(Request request, OutputStream out, ArrayList<byte[]> entities, long totalBytes) throws IOException {
 		long progressLastUpdated = System.currentTimeMillis();
-		int offset, count;
-		int uploadedBytes = 0;
+		int offset, count, uploadedBytes = 0;
 		boolean updateProgress;
-		
+
 		for (byte[] entity : entities) {
 			offset = 0;
-			while (offset < entity.length && canWork()) {
+			while (offset < entity.length && canWork() && !isCurrentCancelled()) {
 				count = Math.min(entity.length - offset, BUFFER_SIZE_BYTES);
 				out.write(entity, offset, count);
 				offset += count;

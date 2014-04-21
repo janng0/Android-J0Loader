@@ -35,6 +35,9 @@ import ru.jango.j0util.LogUtil;
  * passed into it's methods is valid for it, or should be ignored.</b> It could be done with help of the
  * {@link ru.jango.j0loader.Request} objects, witch are passed into each
  * {@link ru.jango.j0loader.DataLoader.LoadingListener}'s methods.
+ *
+ * @param <T>   after postprocessing of the loaded data an object of type T will be created and passed into
+ *              {@link ru.jango.j0loader.DataLoader.LoadingListener#loadingFinished(Request, byte[], Object)}
  */
 public abstract class DataLoader<T> {
 	protected final int PROGRESS_UPDATE_INTERVAL_MS = 200;
@@ -48,9 +51,9 @@ public abstract class DataLoader<T> {
 	private Thread loaderThread;
 	private Queue queue;
 	private boolean working;        // TRUE if the queue is executing
-	private boolean cancelled;      // TRUE if processing current Request should be stopped
+    private boolean currCancelled;  // TRUE if processing current Request should be stopped
 	private boolean debug;          // TRUE if debug messages should be logged
-	
+
 	public DataLoader() {
 		mainThreadHandler = new Handler();
 		listeners = new HashSet<LoadingListener<T>>();
@@ -116,6 +119,9 @@ public abstract class DataLoader<T> {
 	
 	/**
 	 * Checks if queue execution is allowed.
+     *
+     * @see #stopWorking()
+     * @see #allowWorking()
 	 */
 	public boolean canWork() {
         return working;
@@ -129,8 +135,17 @@ public abstract class DataLoader<T> {
      * Calling this method won't stop downloading, but the operation will die soon after it.
 	 */
 	public void cancelCurrent() {
-		cancelled = true;
+		currCancelled = true;
 	}
+
+    /**
+     * Checks if processing of current queue element was cancelled.
+     *
+     * @see #cancelCurrent()
+     */
+    public boolean isCurrentCancelled() {
+        return currCancelled;
+    }
 
     /**
      * Check if debug logging is on.
@@ -164,25 +179,21 @@ public abstract class DataLoader<T> {
     ////////////////////////////////////////////////////////////////////////
 
     /**
-     * Adds a {@link ru.jango.j0loader.Request} into the end of the loading queue and <b>automatically
-     * starts the execution of the queue</b>.
+     * Adds a {@link ru.jango.j0loader.Request} into the end of the loading queue.
      *
      * @param request   a {@link Request} to add
      */
     public void addToQueue(Request request) {
         getQueue().add(request);
-        start();
     }
 
     /**
-     * Adds all {@link ru.jango.j0loader.Request}s into the end of the loading queue and <b>automatically
-     * starts the execution of the queue</b>.
+     * Adds all {@link ru.jango.j0loader.Request}s into the end of the loading queue.
      *
      * @param requests   a pack of {@link Request}s to add
      */
     public void addToQueue(Collection<Request> requests) {
         getQueue().addAll(requests);
-        start();
     }
 
     /**
@@ -280,7 +291,7 @@ public abstract class DataLoader<T> {
 			return doLoad(request,in);
 		} finally {
             try {
-                assert in != null;
+                assert in != null; // don't like yellow warnings in Android Studio!
                 in.close();
             } catch(Exception ignored) {}
         }
@@ -289,16 +300,15 @@ public abstract class DataLoader<T> {
     /**
 	 * Helper method for subclasses - actually does the loading. Also automatically calls
      * {@link #postMainLoadingUpdateProgress(Request, long, long)} during the work; handles
-     * 'working' and 'cancelled' flags.
+     * {@link #canWork()} and {@link #isCurrentCancelled()} flags.
 	 */
 	protected byte[] doLoad(Request request, InputStream in) throws IOException {
-        cancelled = false;
 		long progressLastUpdated = System.currentTimeMillis();
 		int nRead, totalRead = 0;
 		byte[] data = new byte[BUFFER_SIZE_BYTES];
 
 		final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		while ((nRead = in.read(data, 0, data.length))!=-1 && canWork() && !cancelled)  {
+		while ((nRead = in.read(data, 0, data.length))!=-1 && canWork() && !isCurrentCancelled())  {
 			buffer.write(data, 0, nRead);
 			totalRead += nRead;
 			
@@ -313,10 +323,7 @@ public abstract class DataLoader<T> {
 		final byte[] ret = buffer.toByteArray();
 		buffer.close();
         logDebug("doLoad: " + request.getURI() + " : " + (new String(ret, "UTF-8"))); 
-        if (cancelled) {
-		    cancelled = false;
-            return null;
-        } else return ret;
+        return ret;
     }
 
 	/**
@@ -326,23 +333,37 @@ public abstract class DataLoader<T> {
 	 */
 	protected InputStream openInputStream(Request request) throws IOException, URISyntaxException {
 		final URLConnection urlConnection = request.getURL().openConnection();
-		urlConnection.setUseCaches(false);
-		urlConnection.setDoInput(true);
-		urlConnection.setDoOutput(false);
-		urlConnection.setConnectTimeout(CONNECT_TIMEOUT);
-		urlConnection.setReadTimeout(READ_TIMEOUT);
+        configURLConnection(urlConnection);
 
         // TODO check getContentLength() with File sheme
 		request.setContentLength(urlConnection.getContentLength());
 		return urlConnection.getInputStream();
 	}
-	
+
+    /**
+     * Applies default configurations to specified {@link java.net.URLConnection}.
+     */
+    protected void configURLConnection(URLConnection urlConnection) {
+        urlConnection.setUseCaches(false);
+        urlConnection.setDoInput(true);
+        urlConnection.setDoOutput(false);
+        urlConnection.setConnectTimeout(CONNECT_TIMEOUT);
+        urlConnection.setReadTimeout(READ_TIMEOUT);
+    }
+
     ////////////////////////////////////////////////////////////////////////
     //
     //		Crossthread communication methods
     //
     ////////////////////////////////////////////////////////////////////////
-	
+
+    /**
+     * Checks various stop flags (i.e. {@link #canWork()}, {@link #isCurrentCancelled()})
+     */
+    protected boolean canPostMain() {
+        return canWork() && !isCurrentCancelled();
+    }
+
 	/**
 	 * Reports on main thread to all listeners that executing of the specified
      * {@link ru.jango.j0loader.Request} has just began.
@@ -350,7 +371,7 @@ public abstract class DataLoader<T> {
      * @param request   {@link ru.jango.j0loader.Request} processed now
 	 */
 	protected void postMainLoadingStarted(final Request request) {
-		if (!canWork()) return;
+		if (!canPostMain()) return;
 		logDebug("postMainLoadingStarted: " + request.getURI());
 		
 		mainThreadHandler.post(new Runnable() {
@@ -371,7 +392,7 @@ public abstract class DataLoader<T> {
      * @param totalBytes    total bytes that should be downloaded (content length)
 	 */
 	protected void postMainLoadingUpdateProgress(final Request request, final long loadedBytes, final long totalBytes) {
-		if (!canWork()) return;
+		if (!canPostMain()) return;
 		logDebug("postMainLoadingUpdateProgress: " + request.getURI() + " : " 
 					+ "downloaded " + loadedBytes + "bytes; "
 					+ "total " + totalBytes + "bytes");
@@ -395,7 +416,7 @@ public abstract class DataLoader<T> {
      * @param totalBytes    total bytes that should be uploaded (sum of all params sizes)
      */
 	protected void postMainUploadingUpdateProgress(final Request request, final long uploadedBytes, final long totalBytes) {
-		if (!canWork()) return;
+		if (!canPostMain()) return;
 		logDebug("postMainUploadingUpdateProgress: " + request.getURI() + " : " 
 					+ "uploaded " + uploadedBytes + "bytes; "
 					+ "total " + totalBytes + "bytes");
@@ -418,7 +439,7 @@ public abstract class DataLoader<T> {
      * @param data      postprocessed loader-specific data
      */
 	protected void postMainLoadingFinished(final Request request, final byte[] rawData, final T data) {
-		if (!canWork()) return;
+		if (!canPostMain()) return;
 		logDebug("postMainLoadingFinished: " + request.getURI() + " : " 
 					+ rawData.length + "bytes");
 		
@@ -439,7 +460,7 @@ public abstract class DataLoader<T> {
      * @param e         raised {@link Exception}
      */
 	protected void postMainLoadingFailed(final Request request, final Exception e) {
-		if (!canWork()) return;
+		if (!canPostMain()) return;
 		if (isDebug()) e.printStackTrace();
 		logDebug("postMainLoadingFailed: " + request.getURI() + " : " + e);
 		
@@ -460,6 +481,9 @@ public abstract class DataLoader<T> {
 	
 	/**
 	 * Listener interface for loading (uploading and downloading) process.
+     *
+     * @param <T>   after postprocessing of the loaded data an object of type T will be created and passed into
+     *              {@link #loadingFinished(Request, byte[], Object)}
 	 */
 	public interface LoadingListener<T> {
 		/**
@@ -514,6 +538,7 @@ public abstract class DataLoader<T> {
 		public void run()  {
 			while (!isQueueEmpty() && canWork()) {
 				final Request request = getQueue().next();
+                currCancelled = false;
 
 				try {
 					postMainLoadingStarted(request);

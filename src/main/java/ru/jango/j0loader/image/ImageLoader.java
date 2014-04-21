@@ -35,7 +35,11 @@ import ru.jango.j0util.LogUtil;
  *
  */
 public class ImageLoader extends DataLoader<Bitmap> {
-	
+
+    // TODO refactor (use BmpUtil more)
+    // TODO separate cache as a standalone class
+    // TODO comments
+
 	public static final long DEFAULT_MAX_CACHE_SIZE = 5000000;
 	
 	private Thread cacheLoaderThread;
@@ -65,8 +69,6 @@ public class ImageLoader extends DataLoader<Bitmap> {
 				getCacheQueue().add(request);
 			else getQueue().add(request);
 		}
-		
-		start();
 	}
 	
 	@Override
@@ -78,8 +80,6 @@ public class ImageLoader extends DataLoader<Bitmap> {
 				else getQueue().add(request);
 			}
 		}
-		
-		start();
 	}
 	
 	@Override

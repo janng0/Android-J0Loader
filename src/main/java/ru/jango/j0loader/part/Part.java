@@ -4,7 +4,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public abstract class Part {
+/**
+ * Base class for managing HTTP request params. You can use this class and it's subclasses to
+ * construct and manipulate HTTP-entities that you need. All aspects (including ContentType) could
+ * be configured as you need.
+ * <br><br>
+ *
+ * If you want a {@link ru.jango.j0loader.part.Part}-like wrapper (like
+ * {@link ru.jango.j0loader.part.BitmapPart}) for some complicated structure (like
+ * {@link android.graphics.Bitmap}), it's a good idea to subclass {@link ru.jango.j0loader.part.Part}.
+ */
+public class Part {
 
     public static final String RN = "\r\n";
     public static final String HYPHENS = "--";
@@ -57,17 +67,18 @@ public abstract class Part {
 	}
 
 	/**
-	 * Пишет объект в указанный поток в виде HTTP-сущности (со всеми заголовками и нюансами).
-	 * 
-	 * @param out	поток, куда нужно выводить данные
-	 * @throws java.io.IOException
+	 * Writes this {@link ru.jango.j0loader.part.Part} into the specified {@link java.io.OutputStream}
+     * as an HTTP-entity (with all headers, Black-Jack and others...)
+     *
+     * @see #encodeEntity()
 	 */
 	public void writeToStream(OutputStream out) throws IOException {
 		out.write(encodeEntity());
 	}
 
 	/**
-	 * Преобразует объект в HTTP-сущность (со всеми заголовками и нюансами).
+	 * Transforms this {@link ru.jango.j0loader.part.Part} into an HTTP-entity of full value - adds all
+     * needed headers and boundaries before and after and transforms all this into a byte array.
 	 */
 	public byte[] encodeEntity() {
 		final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -84,8 +95,8 @@ public abstract class Part {
 			out.flush();
 			
 			entity = out.toByteArray();
-		} catch (Exception e) {;}
-		finally { try { out.close(); } catch(Exception e) {;} }
+		} catch (Exception ignored) {}
+		finally { try { out.close(); } catch(Exception ignored) {} }
 		
 		return entity;
 	}
