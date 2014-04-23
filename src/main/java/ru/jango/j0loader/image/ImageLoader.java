@@ -21,18 +21,36 @@ import ru.jango.j0loader.Request;
 import ru.jango.j0util.LogUtil;
 
 /**
- * Класс-загрузчик картинок. Загруженные картинки сохраняет внутри себя во внутреннем 
- * кэше в виде массивов байт (для облегчения). Так же можно задать размер, в котором 
- * нужно выдавать картинку после загрузки. 
- * <br><br>
- * -- для клиентов класса нет разграничения между загрузкой и выдачей из кэша - когда до 
- * картинки доходит очередь загрузки, она либо выдается быстро из кэша, либо долго 
- * загружается.
- * <br><br>
- * -- ограничений на размер кэша нет - он довольно компактный, но потенциально может 
- * уронить приложение при нехватке памяти
- * 
+ * Advanced lightweight image loader. Main features:
+ * <ul>
+ * <li>internal cache - by default images are cached in memory as encoded byte arrays (should be
+ * transformed into {@link android.graphics.Bitmap} with
+ * {@link android.graphics.BitmapFactory#decodeByteArray(byte[], int, int, android.graphics.BitmapFactory.Options)});
+ * it takes some time to retrieve an image from cache then, but on the other hand pretty much data
+ * could be cached (encoded data is much smaller, than raw pixel data)</li>
+ * <li>smart scaling - loader's clients could specify the desired image size and loader will
+ * automatically and asynchronously (in the downloading thread) scale images before passing it to
+ * clients; for scaling are used algorithms from {@link ru.jango.j0util.BmpUtil}</li>
+ * </ul>
+ * <br>
  *
+ * Other features:
+ * <ul>
+ * <li>images are cached in already scaled size</li>
+ * <li>only one instance of a single image could be cached - if clients try to load same image with
+ * different scales, would be selected a larger one and an image will be cached in this larger scale;
+ * if clients try to load an image that is already cached but with smaller scale, then the image
+ * would be reloaded, rescaled in new large scale and recached</li>
+ * <li>TODO cache is separated as a standalone class, so you can different caching strategies,
+ * or create your own (default is simple memory cache)</li>
+ * <li>by default cache size is limited by {@link #DEFAULT_MAX_CACHE_SIZE}; be aware, that huge
+ * cache can cause {@link java.lang.OutOfMemoryError}</li>
+ * <li>loading from cache is transparent for clients - clients don't know was requested image
+ * cached or not (if it was, client just get required image faster)</li>
+ * <li>loading thread is separated into default and cache threads - default comes from
+ * {@link ru.jango.j0loader.DataLoader} and cache thread is created and managed by
+ * {@link ru.jango.j0loader.image.ImageLoader} itself</li>
+ * </ul>
  */
 public class ImageLoader extends DataLoader<Bitmap> {
 
@@ -49,11 +67,6 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	private final Map<URI, Rect> scales;
 	private long maxCacheSize;
 	
-	public ImageLoader(LoadingListener<Bitmap> listener) {
-		this();
-		addLoadingListener(listener);
-	}
-	
 	public ImageLoader() {
 		super();
 		
@@ -62,7 +75,12 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		setMaxCacheSize(DEFAULT_MAX_CACHE_SIZE);
 	}
 
-	@Override
+    public ImageLoader(LoadingListener<Bitmap> listener) {
+        this();
+        addLoadingListener(listener);
+    }
+
+    @Override
 	public void addToQueue(Request request) {
 		synchronized(cache) {
 			if (cache.containsKey(request.getURI()))
@@ -97,6 +115,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	}
 	
 	/**
+     *
 	 * Добавить изображение в очередь загрузки. Второй параметр задает
 	 * размер, в котором нужно возвращать загруженное изображение (обработка изображения
 	 * так же вынесена в отдельный поток).
@@ -163,6 +182,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	 * -- очищает очередь загрузки <br>
 	 * -- очищает очередь загрузки из кэша
 	 */
+    @Override
 	public void reset() {
 		stopWorking();
 		clearCache();
@@ -252,32 +272,17 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		return cacheLoaderThread;
 	}
 	
-	/**
-	 * Максимальный размер изображения, который может прожевать Android - 
-	 * 2048х2048, иначе при создании {@link android.graphics.Bitmap} получится {@link OutOfMemoryError}
-	 * <br><br>
-	 * Метод выясняет, во сколько раз нужно скукожить изображение (представленное в виде 
-	 * массива байт), чтобы оно влезло в 2048х2048. Если размер и так нормальный - 
-	 * вернет 1. 
-	 */
 	private int getScaleCritical(byte[] rawImageData) {
 		final BitmapFactory.Options options = new BitmapFactory.Options();
 	    options.inJustDecodeBounds = true;
 	    BitmapFactory.decodeByteArray(rawImageData, 0, rawImageData.length, options);
-	    
+
 	    final int vScale = Math.round((options.outHeight)/2048.0f + 0.5f);
 	    final int hScale = Math.round((options.outWidth) / 2048.0f + 0.5f);
 
 	    return Math.max(1, Math.max(vScale, hScale));
-	 	}
+	 }
 
-	/**
-	 * Метод выясняет, во сколько раз нужно скукожить изображение (представленное в виде 
-	 * массива байт), чтобы его максимальное измерение стало больше либо равно 
-	 * минимальному измерению указанного {@link android.graphics.Rect}. То есть, максимально приблизить
-	 * его размер к требуемому, но чтобы оно все равно осталось больше. Если размер и 
-	 * так нормальный - вернет 1. 
-	 */
 	private int getScale(byte[] rawImageData, Request request) {
 		Rect scale;
 		synchronized(scales) { scale = scales.get(request.getURI()); }
@@ -286,10 +291,10 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		final BitmapFactory.Options options = new BitmapFactory.Options();
 	    options.inJustDecodeBounds = true;
 	    BitmapFactory.decodeByteArray(rawImageData, 0, rawImageData.length, options);
-	    
+
 	    final int vScale = Math.round((options.outHeight)/scale.height() - 0.5f);
 	    final int hScale = Math.round((options.outWidth)/scale.width() - 0.5f);
-	    
+
 	    return Math.max(1, Math.min(vScale, hScale));
 	}
 
@@ -299,7 +304,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		stream.flush();
 		byte[] data = stream.toByteArray();
 		stream.close();
-		
+
 		return data;
 	}
 
@@ -307,41 +312,41 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		Rect scale;
 		synchronized(scales) { scale = scales.get(request.getURI()); }
 		if (scale == null) return null;
-		
-		double factor = Math.min(((float) src.getWidth()) / ((float) scale.width()), 
+
+		double factor = Math.min(((float) src.getWidth()) / ((float) scale.width()),
 				((float) src.getHeight()) / ((float) scale.height()));
 		if (factor < 0) return null;
-		
+
 		return new Rect(0, 0, (int) (src.getWidth()/factor), (int) (src.getHeight()/factor));
 	}
-	
+
 	private byte[] scaleBitmapData(Request request, byte[] raw) throws DataFormatException, IOException {
 		int scale = Math.max(getScaleCritical(raw), getScale(raw, request));
 		if (scale <= 1) return raw;
-		
+
 		final BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inSampleSize = scale;
-	
+
 		final Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length, options);
 		if (bmp == null) throw new DataFormatException("That was not an image Oo");
-		
+
 		byte[] data;
 		final Rect accurateScale = getAccurateScale(request, bmp);
 		if (accurateScale == null) data = bmpToByte(bmp);
 		else {
-			final Bitmap scaled = Bitmap.createScaledBitmap(bmp, 
+			final Bitmap scaled = Bitmap.createScaledBitmap(bmp,
 					accurateScale.width(), accurateScale.height(), true);
-			
+
 			data = bmpToByte(scaled);
 			scaled.recycle();
 		}
-		
+
 		bmp.recycle();
 		return data;
 	}
-	
+
 	private void addToCache(Request request, byte[] raw) {
-		synchronized(cache) { 
+		synchronized(cache) {
 			if (!cache.containsKey(request.getURI()) && getCacheSize()<=maxCacheSize) {
 				cache.put(request.getURI(), raw);
 				LogUtil.i(ImageLoader.class, "added to cache; " +
@@ -349,24 +354,24 @@ public class ImageLoader extends DataLoader<Bitmap> {
 			}
 		}
 	}
-	
+
 	private Bitmap processBitmap(Request request, byte[] rawImageData) throws DataFormatException, IOException {
 		addToCache(request, rawImageData);
-		
+
 		final Bitmap bmp = BitmapFactory.decodeByteArray(rawImageData, 0, rawImageData.length);
 		if (bmp == null) throw new DataFormatException("That was not an image Oo");
 
 		logDebug("processBitmapData: " + request.getURI());
 		return bmp;
 	}
-	
+
 	private boolean loadFromCache(Request request) {
 		synchronized(cache) { 
 			if (cache.containsKey(request.getURI())) {
 				LogUtil.i(ImageLoader.class, "loading from cache: "+request.getURI());
 				
 				final byte[] raw = cache.get(request.getURI());
-				postMainLoadingFinished(request, raw, BitmapFactory.decodeByteArray(raw, 0, raw.length));
+				postProcessFinished(request, raw, BitmapFactory.decodeByteArray(raw, 0, raw.length));
 				return true;
 			}
 		}		
@@ -378,7 +383,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		LogUtil.i(ImageLoader.class, "loading from uri: "+request.getURI());
 
 		final byte[] rawImageData = scaleBitmapData(request, load(request));
-		postMainLoadingFinished(request, rawImageData, processBitmap(request, rawImageData));
+		postProcessFinished(request, rawImageData, processBitmap(request, rawImageData));
 	}
 	
 	@Override
@@ -393,9 +398,9 @@ public class ImageLoader extends DataLoader<Bitmap> {
 				final Request request = getCacheQueue().next();
 				
 				try {
-					postMainLoadingStarted(request);
+					postLoadingStarted(request);
 					loadInBackground(request);
-				} catch (Exception e) { postMainLoadingFailed(request, e); }
+				} catch (Exception e) { postProcessFailed(request, e); }
 
 				LogUtil.logMemoryUsage();
 			}

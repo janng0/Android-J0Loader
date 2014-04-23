@@ -28,6 +28,6 @@ public class JSONLoader extends ParamedLoader<JSONArray> {
 		}
 		
 		logDebug("loadInBackground: " + request.getURI() + " : " + array);
-		postMainLoadingFinished(request, rawData, array);
+		postProcessFinished(request, rawData, array);
 	}
 }

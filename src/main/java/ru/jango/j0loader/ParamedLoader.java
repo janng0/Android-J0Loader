@@ -16,7 +16,7 @@ import ru.jango.j0loader.part.Part;
  * passed inside a {@link ru.jango.j0loader.Request} object.
  *
  * @param <T>   after postprocessing of the loaded data an object of type T will be created and passed into
- *              {@link ru.jango.j0loader.DataLoader.LoadingListener#loadingFinished(Request, byte[], Object)}
+ *              {@link ru.jango.j0loader.DataLoader.LoadingListener#processFinished(Request, byte[], Object)}
  */
 public abstract class ParamedLoader<T> extends DataLoader<T> {
     // TODO look through the List<Part> and use HTTP GET in certain cases (not always POST)
@@ -66,7 +66,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 	
 	/**
      * Write entities into specified {@link java.io.OutputStream}. Also automatically calls
-     * {@link #postMainUploadingUpdateProgress(Request, long, long)} during the work; handles
+     * {@link #postUploadingUpdateProgress(Request, long, long)} during the work; handles
      * {@link #canWork()} and {@link #isCurrentCancelled()} flags.
 	 */
 	protected void writeEntities(Request request, OutputStream out, ArrayList<byte[]> entities, long totalBytes) throws IOException {
@@ -74,6 +74,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 		int offset, count, uploadedBytes = 0;
 		boolean updateProgress;
 
+        // TODO wrap OutputStream in BufferedOutputStream
 		for (byte[] entity : entities) {
 			offset = 0;
 			while (offset < entity.length && canWork() && !isCurrentCancelled()) {
@@ -85,7 +86,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 				updateProgress = System.currentTimeMillis() > progressLastUpdated + PROGRESS_UPDATE_INTERVAL_MS;
 				if (updateProgress) {
 					progressLastUpdated = System.currentTimeMillis();
-					postMainUploadingUpdateProgress(request, uploadedBytes, totalBytes);
+					postUploadingUpdateProgress(request, uploadedBytes, totalBytes);
 				}
 			}
 			

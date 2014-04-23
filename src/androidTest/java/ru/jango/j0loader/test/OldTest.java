@@ -58,12 +58,12 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
+            public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
                 LogUtil.d(OldTest.class, "loading progress: "+(loadedBytes*100/totalBytes));
             }
 
             @Override
-            public void loadingFinished(Request request, byte[] rawData, Bitmap data) {
+            public void processFinished(Request request, byte[] rawData, Bitmap data) {
                 LogUtil.d(OldTest.class, "loading finished: " + request.getURI());
 
                 Assert.assertNotNull(data);
@@ -106,7 +106,7 @@ public class OldTest extends AndroidTestCase {
             @Override
             protected void loadInBackground(Request request) throws Exception {
                 final byte[] responce = load(request);
-                postMainLoadingFinished(request, responce, new String(responce, "UTF-8"));
+                postProcessFinished(request, responce, new String(responce, "UTF-8"));
             }
         };
 
@@ -124,12 +124,12 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
+            public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
                 LogUtil.d(OldTest.class, "loading progress: "+(loadedBytes*100/totalBytes));
             }
 
             @Override
-            public void loadingFinished(Request request, byte[] rawData, String data) {
+            public void processFinished(Request request, byte[] rawData, String data) {
                 LogUtil.d(OldTest.class, "loading finished: "+request.getURI());
 
                 Assert.assertNotNull(rawData);
@@ -167,7 +167,7 @@ public class OldTest extends AndroidTestCase {
             @Override
             protected void loadInBackground(Request request) throws Exception {
                 final byte[] responce = load(request);
-                postMainLoadingFinished(request, responce, new String(responce, "UTF-8"));
+                postProcessFinished(request, responce, new String(responce, "UTF-8"));
             }
         };
 
@@ -180,7 +180,7 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
+            public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
                 LogUtil.d(OldTest.class, "loading progress: "+(loadedBytes*100/totalBytes));
             }
 
@@ -190,7 +190,7 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingFinished(Request request, byte[] rawData, String data) {
+            public void processFinished(Request request, byte[] rawData, String data) {
                 LogUtil.d(OldTest.class, "loading finished: "+request);
 
                 Assert.assertNotNull(rawData);
@@ -230,7 +230,7 @@ public class OldTest extends AndroidTestCase {
             @Override
             protected void loadInBackground(Request request) throws Exception {
                 final byte[] responce = load(request);
-                postMainLoadingFinished(request, responce, new String(responce, "UTF-8"));
+                postProcessFinished(request, responce, new String(responce, "UTF-8"));
             }
         };
 
@@ -243,7 +243,7 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
+            public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
                 LogUtil.d(OldTest.class, "loading progress: "+(loadedBytes*100/totalBytes));
             }
 
@@ -253,7 +253,7 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingFinished(Request request, byte[] rawData, String data) {
+            public void processFinished(Request request, byte[] rawData, String data) {
                 LogUtil.d(OldTest.class, "loading finished: "+request);
 
                 Assert.assertNotNull(rawData);
@@ -299,7 +299,7 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
+            public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
                 LogUtil.d(OldTest.class, "loading progress: "+(loadedBytes*100/totalBytes));
             }
 
@@ -309,7 +309,7 @@ public class OldTest extends AndroidTestCase {
             }
 
             @Override
-            public void loadingFinished(Request request, byte[] rawData, JSONArray data) {
+            public void processFinished(Request request, byte[] rawData, JSONArray data) {
                 LogUtil.d(OldTest.class, "loading finished: "+request);
 
                 Assert.assertNotNull(rawData);

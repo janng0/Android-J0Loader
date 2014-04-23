@@ -53,7 +53,7 @@ public class AsyncImageView extends ImageView {
 		}
 
 		@Override
-		public void loadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
+		public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
 			if (!PathUtil.uriEquals(imageUri, request.getURI())) return;
 			if (imageSet) return;
 			
@@ -62,7 +62,7 @@ public class AsyncImageView extends ImageView {
 		}
 
 		@Override
-		public void loadingFinished(Request request, byte[] rawData, Bitmap data) {
+		public void processFinished(Request request, byte[] rawData, Bitmap data) {
 			if (!PathUtil.uriEquals(imageUri, request.getURI())) return;
 			if (imageSet) return;
 			

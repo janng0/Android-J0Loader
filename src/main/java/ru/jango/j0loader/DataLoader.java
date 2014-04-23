@@ -22,7 +22,8 @@ import ru.jango.j0util.LogUtil;
  * Base abstract loader class. Capabilities:
  * <ul>
  * <li>load data itself (HTTP GET without sending params, file, ftp, jar - see {@link java.net.URLConnection})</li>
- * <li>report into main thread by {@link ru.jango.j0loader.DataLoader.LoadingListener} (protected postMain...() methods)</li>
+ * <li>report into main thread by {@link ru.jango.j0loader.DataLoader.LoadingListener} (protected post...() methods)</li>
+ * <li>can call listeners' methods synchronously in loading thread (see {@link #setFullAsyncMode(boolean)})</li>
  * <li>provides one {@link java.lang.Thread} for asynchronous queue execution ({@link #loadInBackground(Request)})</li>
  * <li>control thread execution ({@link #canWork()}, {@link #cancelCurrent()})</li>
  * <li>control queue execution ({@link #getQueue()})</li>
@@ -37,7 +38,7 @@ import ru.jango.j0util.LogUtil;
  * {@link ru.jango.j0loader.DataLoader.LoadingListener}'s methods.
  *
  * @param <T>   after postprocessing of the loaded data an object of type T will be created and passed into
- *              {@link ru.jango.j0loader.DataLoader.LoadingListener#loadingFinished(Request, byte[], Object)}
+ *              {@link ru.jango.j0loader.DataLoader.LoadingListener#processFinished(Request, byte[], Object)}
  */
 public abstract class DataLoader<T> {
 	protected final int PROGRESS_UPDATE_INTERVAL_MS = 200;
@@ -51,8 +52,9 @@ public abstract class DataLoader<T> {
 	private Thread loaderThread;
 	private Queue queue;
 	private boolean working;        // TRUE if the queue is executing
-    private boolean currCancelled;  // TRUE if processing current Request should be stopped
+    private boolean currCancelled;  // TRUE if processing of current Request should be stopped
 	private boolean debug;          // TRUE if debug messages should be logged
+    private boolean fullAsyncMode;  // TRUE if listeners should be executed in loading thread
 
 	public DataLoader() {
 		mainThreadHandler = new Handler();
@@ -148,6 +150,30 @@ public abstract class DataLoader<T> {
     }
 
     /**
+     * By default full asynchronous mode is OFF and all
+     * {@link ru.jango.j0loader.DataLoader.LoadingListener}'s methods are called in main thread
+     * (inter-thread communication is already embed in loaders). It is very useful for example
+     * for updating interface. <br>
+     * But if you don't need to switch into main thread, you can turn FullAsync mode ON and all
+     * your postprocessing logic (listener's methods) will be executed in loading thread, but
+     * that may stretch delays between executing requests (that is, loading itself). That could
+     * be useful when working for example with {@link android.content.ContentProvider}.
+     * <br><br>
+     *
+     * Basically this mode was needed for tests:)
+     */
+    public void setFullAsyncMode(boolean fullAsyncMode) {
+        this.fullAsyncMode = fullAsyncMode;
+    }
+
+    /**
+     * Checks if in full asynchronous mode.
+     */
+    public boolean isFullAsyncMode() {
+        return fullAsyncMode;
+    }
+
+    /**
      * Check if debug logging is on.
      */
 	public boolean isDebug() {
@@ -155,14 +181,14 @@ public abstract class DataLoader<T> {
 	}
 
     /**
-     * Switches debug logging on/off.
+     * Switches debug logging on/off. Default - OFF.
      */
 	public void setDebug(boolean debug) {
 		this.debug = debug;
 	}
 
     /**
-     * Returns a {@link java.lang.Thread} where the queue will be executed. In subclasses this
+     * Returns a {@link java.lang.Thread} where the queue is executed. In subclasses this
      * method could be overwritten to provide another thread.
      */
     protected Thread getLoaderThread() {
@@ -170,6 +196,13 @@ public abstract class DataLoader<T> {
             return loaderThread = new Thread(queueRunnable);
 
         return loaderThread;
+    }
+
+    /**
+     * Getter for listeners set basically for tests. See <b>ImageLoaderTest.ImageLoaderWrapper</b> class.
+     */
+    protected Set<LoadingListener<T>> getLoadingListeners() {
+        return new HashSet<LoadingListener<T>>(listeners);
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -299,7 +332,7 @@ public abstract class DataLoader<T> {
 	
     /**
 	 * Helper method for subclasses - actually does the loading. Also automatically calls
-     * {@link #postMainLoadingUpdateProgress(Request, long, long)} during the work; handles
+     * {@link #postDownloadingUpdateProgress(Request, long, long)} during the work; handles
      * {@link #canWork()} and {@link #isCurrentCancelled()} flags.
 	 */
 	protected byte[] doLoad(Request request, InputStream in) throws IOException {
@@ -307,6 +340,7 @@ public abstract class DataLoader<T> {
 		int nRead, totalRead = 0;
 		byte[] data = new byte[BUFFER_SIZE_BYTES];
 
+        // TODO wrap InputStream in BufferedInputStream
 		final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		while ((nRead = in.read(data, 0, data.length))!=-1 && canWork() && !isCurrentCancelled())  {
 			buffer.write(data, 0, nRead);
@@ -315,7 +349,7 @@ public abstract class DataLoader<T> {
 			boolean updateProgress = System.currentTimeMillis() > progressLastUpdated + PROGRESS_UPDATE_INTERVAL_MS;
 			if (request.getContentLength()!=-1 && updateProgress) {
 				progressLastUpdated = System.currentTimeMillis();
-				postMainLoadingUpdateProgress(request,totalRead,request.getContentLength());
+				postDownloadingUpdateProgress(request, totalRead, request.getContentLength());
 			}
 		}
 		buffer.flush();
@@ -353,126 +387,151 @@ public abstract class DataLoader<T> {
 
     ////////////////////////////////////////////////////////////////////////
     //
-    //		Crossthread communication methods
+    //		Listeners methods callers (crossthread communication)
     //
     ////////////////////////////////////////////////////////////////////////
 
     /**
      * Checks various stop flags (i.e. {@link #canWork()}, {@link #isCurrentCancelled()})
      */
-    protected boolean canPostMain() {
+    protected boolean canPingListeners() {
         return canWork() && !isCurrentCancelled();
     }
 
 	/**
-	 * Reports on main thread to all listeners that executing of the specified
-     * {@link ru.jango.j0loader.Request} has just began.
+	 * Reports to all listeners that executing of the specified {@link ru.jango.j0loader.Request}
+     * has just began.
      *
      * @param request   {@link ru.jango.j0loader.Request} processed now
+
+     * @see #isFullAsyncMode()
 	 */
-	protected void postMainLoadingStarted(final Request request) {
-		if (!canPostMain()) return;
-		logDebug("postMainLoadingStarted: " + request.getURI());
-		
-		mainThreadHandler.post(new Runnable() {
+	protected void postLoadingStarted(final Request request) {
+		if (!canPingListeners()) return;
+		logDebug("postLoadingStarted: " + request.getURI());
+
+        if (isFullAsyncMode()) doPostLoadingStarted(request);
+        else mainThreadHandler.post(new Runnable() {
 			@Override
-			public void run() { 
-				for (LoadingListener<T> listener : listeners)
-					listener.processStarted(request); 
-			}
-		});
-	}
-		
-	/**
-	 * Reports on main thread to all listeners that a new chunk of data has been downloaded for
-     * the specified {@link ru.jango.j0loader.Request}.
-     *
-     * @param request       {@link ru.jango.j0loader.Request} processed now
-     * @param loadedBytes   total bytes that have already been downloaded
-     * @param totalBytes    total bytes that should be downloaded (content length)
-	 */
-	protected void postMainLoadingUpdateProgress(final Request request, final long loadedBytes, final long totalBytes) {
-		if (!canPostMain()) return;
-		logDebug("postMainLoadingUpdateProgress: " + request.getURI() + " : " 
-					+ "downloaded " + loadedBytes + "bytes; "
-					+ "total " + totalBytes + "bytes");
-		
-		mainThreadHandler.post(new Runnable()  {
-			@Override
-			public void run()  { 
-				for (LoadingListener<T> listener : listeners)
-					listener.loadingUpdateProgress(request, loadedBytes, totalBytes); 
-			}
-		});
+			public void run() { doPostLoadingStarted(request); }
+        });
 	}
 
+    private void doPostLoadingStarted(Request request) {
+        for (LoadingListener<T> listener : listeners)
+            listener.processStarted(request);
+    }
+
     /**
-     * Reports on main thread to all listeners that a new chunk of data has been uploaded during
-     * processing the specified {@link ru.jango.j0loader.Request}. It could be called with HTTP
-     * POST and GET requests while sending params.
+     * Reports to all listeners that a new chunk of data has been uploaded during processing the
+     * specified {@link ru.jango.j0loader.Request}. It could be called with HTTP POST and GET
+     * requests while sending params.
      *
      * @param request       {@link ru.jango.j0loader.Request} processed now
      * @param uploadedBytes total bytes that have already been uploaded
      * @param totalBytes    total bytes that should be uploaded (sum of all params sizes)
+     *
+     * @see #isFullAsyncMode()
      */
-	protected void postMainUploadingUpdateProgress(final Request request, final long uploadedBytes, final long totalBytes) {
-		if (!canPostMain()) return;
-		logDebug("postMainUploadingUpdateProgress: " + request.getURI() + " : " 
+	protected void postUploadingUpdateProgress(final Request request, final long uploadedBytes, final long totalBytes) {
+		if (!canPingListeners()) return;
+		logDebug("postUploadingUpdateProgress: " + request.getURI() + " : "
 					+ "uploaded " + uploadedBytes + "bytes; "
 					+ "total " + totalBytes + "bytes");
-		
-		mainThreadHandler.post(new Runnable()  {
+
+        if (isFullAsyncMode()) doPostUploadingUpdateProgress(request, uploadedBytes, totalBytes);
+		else mainThreadHandler.post(new Runnable()  {
 			@Override
-			public void run()  { 
-				for (LoadingListener<T> listener : listeners)
-					listener.uploadingUpdateProgress(request, uploadedBytes, totalBytes); 
-			}
+			public void run()  { doPostUploadingUpdateProgress(request, uploadedBytes, totalBytes); }
 		});
 	}
-	
-	/**
-	 * Reports on main thread to all listeners that executing of the specified
-     * {@link ru.jango.j0loader.Request} has just successfully finished.
+
+    private void doPostUploadingUpdateProgress(Request request, long uploadedBytes, long totalBytes) {
+        for (LoadingListener<T> listener : listeners)
+            listener.uploadingUpdateProgress(request, uploadedBytes, totalBytes);
+    }
+
+    /**
+     * Reports to all listeners that a new chunk of data has been downloaded for the specified
+     * {@link ru.jango.j0loader.Request}.
+     *
+     * @param request       {@link ru.jango.j0loader.Request} processed now
+     * @param loadedBytes   total bytes that have already been downloaded
+     * @param totalBytes    total bytes that should be downloaded (content length)
+     *
+     * @see #isFullAsyncMode()
+     */
+    protected void postDownloadingUpdateProgress(final Request request, final long loadedBytes, final long totalBytes) {
+        if (!canPingListeners()) return;
+        logDebug("postDownloadingUpdateProgress: " + request.getURI() + " : "
+                + "downloaded " + loadedBytes + "bytes; "
+                + "total " + totalBytes + "bytes");
+
+        if (isFullAsyncMode()) doPostDownloadingUpdateProgress(request, loadedBytes, totalBytes);
+        else mainThreadHandler.post(new Runnable()  {
+            @Override
+            public void run()  { doPostDownloadingUpdateProgress(request, loadedBytes, totalBytes); }
+        });
+    }
+
+    private void doPostDownloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
+        for (LoadingListener<T> listener : listeners)
+            listener.downloadingUpdateProgress(request, loadedBytes, totalBytes);
+    }
+
+    /**
+	 * Reports to all listeners that executing of the specified {@link ru.jango.j0loader.Request}
+     * has just successfully finished.
      *
      * @param request   {@link ru.jango.j0loader.Request} that had just been processed
      * @param rawData   raw bytes of the downloaded data
      * @param data      postprocessed loader-specific data
+     *
+     * @see #isFullAsyncMode()
      */
-	protected void postMainLoadingFinished(final Request request, final byte[] rawData, final T data) {
-		if (!canPostMain()) return;
-		logDebug("postMainLoadingFinished: " + request.getURI() + " : " 
+	protected void postProcessFinished(final Request request, final byte[] rawData, final T data) {
+		if (!canPingListeners()) return;
+		logDebug("postProcessFinished: " + request.getURI() + " : "
 					+ rawData.length + "bytes");
-		
-		mainThreadHandler.post(new Runnable()  {
+
+        if (isFullAsyncMode()) doPostProcessFinished(request, rawData, data);
+        else mainThreadHandler.post(new Runnable()  {
 			@Override
-			public void run()  { 
-				for (LoadingListener<T> listener : listeners)
-					listener.loadingFinished(request,rawData,data); 
-			}
+			public void run()  { doPostProcessFinished(request, rawData, data); }
 		});
 	}
 
+    private void doPostProcessFinished(Request request, byte[] rawData, T data) {
+        for (LoadingListener<T> listener : listeners)
+            listener.processFinished(request, rawData, data);
+    }
+
     /**
-     * Reports on main thread to all listeners that executing of the specified
-     * {@link ru.jango.j0loader.Request} has just failed.
+     * Reports to all listeners that executing of the specified {@link ru.jango.j0loader.Request}
+     * has just failed.
      *
      * @param request   {@link ru.jango.j0loader.Request} that had just failed
      * @param e         raised {@link Exception}
+     *
+     * @see #isFullAsyncMode()
      */
-	protected void postMainLoadingFailed(final Request request, final Exception e) {
-		if (!canPostMain()) return;
+	protected void postProcessFailed(final Request request, final Exception e) {
+		if (!canPingListeners()) return;
 		if (isDebug()) e.printStackTrace();
-		logDebug("postMainLoadingFailed: " + request.getURI() + " : " + e);
-		
-		mainThreadHandler.post(new Runnable() {
+		logDebug("postProcessFailed: " + request.getURI() + " : " + e);
+
+        if (isFullAsyncMode()) doPostProcessFailed(request, e);
+        else mainThreadHandler.post(new Runnable() {
 			@Override
-			public void run() { 
-				for (LoadingListener<T> listener : listeners)
-					listener.processFailed(request,e); 
-			}
-		});
+			public void run() { doPostProcessFailed(request, e); }
+        });
 	}
-	
+
+    private void doPostProcessFailed(Request request, Exception e) {
+        for (LoadingListener<T> listener : listeners)
+            listener.processFailed(request,e);
+    }
+
     ////////////////////////////////////////////////////////////////////////
     //
     //		Crossthread communication staff
@@ -483,7 +542,7 @@ public abstract class DataLoader<T> {
 	 * Listener interface for loading (uploading and downloading) process.
      *
      * @param <T>   after postprocessing of the loaded data an object of type T will be created and passed into
-     *              {@link #loadingFinished(Request, byte[], Object)}
+     *              {@link #processFinished(Request, byte[], Object)}
 	 */
 	public interface LoadingListener<T> {
 		/**
@@ -510,7 +569,7 @@ public abstract class DataLoader<T> {
 		 * @param loadedBytes	total bytes that have already been downloaded
 		 * @param totalBytes	total bytes that should be downloaded (content length)
 		 */
-		public void loadingUpdateProgress(Request request, long loadedBytes, long totalBytes);
+		public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes);
 
 		/**
 		 * Called when the loading had been successfully finished.
@@ -519,7 +578,7 @@ public abstract class DataLoader<T> {
 		 * @param rawData	raw downloaded data
 		 * @param data		postprocessed loader-specific data
 		 */
-		public void loadingFinished(Request request, byte[] rawData, T data);
+		public void processFinished(Request request, byte[] rawData, T data);
 		
 		/**
 		 * Called when the loading has failed (both while uploading and downloading).
@@ -541,9 +600,9 @@ public abstract class DataLoader<T> {
                 currCancelled = false;
 
 				try {
-					postMainLoadingStarted(request);
+					postLoadingStarted(request);
 					loadInBackground(request);
-				} catch (Exception e) { postMainLoadingFailed(request, e); }
+				} catch (Exception e) { postProcessFailed(request, e); }
 
 				LogUtil.logMemoryUsage();
 			}
