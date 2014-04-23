@@ -1,7 +1,7 @@
 package ru.jango.j0loader.test;
 
 import android.graphics.Bitmap;
-import android.graphics.Rect;
+import android.graphics.Point;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
@@ -90,8 +90,8 @@ public class OldTest extends AndroidTestCase {
             }
         });
 
-        loader.addToQueue(new Request(uri1), new Rect(0,0,200,200));
-        loader.addToQueue(new Request(uri2), new Rect(0,0,400,400));
+        loader.addToQueue(new Request(uri1), new Point(200,200));
+        loader.addToQueue(new Request(uri2), new Point(400,400));
         loader.addToQueue(new Request(uri3));
 
     }

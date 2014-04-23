@@ -38,19 +38,15 @@ public class ImageLoaderTest extends AndroidTestCase {
                         break;
 
                     case LARGE:
-//                        assertEquals(2048, data.getWidth());
-                        assertEquals(1369, data.getWidth());
-//                        assertEquals(1122, data.getHeight());
-                        assertEquals(750, data.getHeight());
-                        assertEquals(1187625, rawData.length);
+                        assertEquals(1999, data.getWidth());
+                        assertEquals(1095, data.getHeight());
+                        assertEquals(1978649, rawData.length);
                         break;
 
                     case HUGE:
-//                        assertEquals(2048, data.getWidth());
-                        assertEquals(1538, data.getWidth());
-//                        assertEquals(833, data.getHeight());
-                        assertEquals(625, data.getHeight());
-                        assertEquals(1233820, rawData.length);
+                        assertEquals(2000, data.getWidth());
+                        assertEquals(812, data.getHeight());
+                        assertEquals(1688679, rawData.length);
                         break;
 
                     default:
