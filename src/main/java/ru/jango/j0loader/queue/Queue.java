@@ -34,9 +34,9 @@ public interface Queue {
     /**
      * Removes a certain {@link Request} from queue. If a queue contains
      * more than one pointer to the same {@link ru.jango.j0loader.Request} object,
-     * only the first will be removed.
+     * all of them will be removed.
      *
-     * @return TRUE if the {@link ru.jango.j0loader.Request} was successfully removed
+     * @return  TRUE if the queue was modified
      */
 	public boolean remove(Request request);
 
@@ -54,6 +54,11 @@ public interface Queue {
      * Inserts a {@link Request} into the specified position.
      */
     public boolean insert(int pos, Request request);
+
+    /**
+     * Returns current size of the queue.
+     */
+    public int size();
 
     /**
      * Checks if the queue is empty.
@@ -74,8 +79,8 @@ public interface Queue {
      * Searches the queue for the specified {@link ru.jango.j0loader.Request} and returns the
      * index of the first occurrence.
      *
-     * @param request the {@link ru.jango.j0loader.Request} to search for
-     * @return found index or -1
+     * @param request   the {@link ru.jango.j0loader.Request} to search for
+     * @return          found index or -1
      */
 	public int indexOf(Request request);
 
@@ -83,8 +88,8 @@ public interface Queue {
      * Searches the queue for the specified {@link ru.jango.j0loader.Request} by it's
      * {@link java.net.URI} and returns the index of the first occurrence.
      *
-     * @param uri the {@link java.net.URI} to search for
-     * @return found index or -1
+     * @param uri   the {@link java.net.URI} to search for
+     * @return      found index or -1
      */
 	public int indexOf(URI uri);
 }

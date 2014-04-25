@@ -198,13 +198,6 @@ public abstract class DataLoader<T> {
         return loaderThread;
     }
 
-    /**
-     * Getter for listeners set basically for tests. See <b>ImageLoaderTest.ImageLoaderWrapper</b> class.
-     */
-    protected Set<LoadingListener<T>> getLoadingListeners() {
-        return new HashSet<LoadingListener<T>>(listeners);
-    }
-
     ////////////////////////////////////////////////////////////////////////
     //
     //		Queue controlling methods

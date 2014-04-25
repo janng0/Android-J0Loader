@@ -33,69 +33,6 @@ public class OldTest extends AndroidTestCase {
     private static final String UPLOAD = BASE + "upload.php";
     private static final String JSON_LOAD = BASE + "json_load.php";
 
-    private boolean img1Loaded = false;
-    private boolean img2Loaded = false;
-
-    public void testImageDownload() throws Exception {
-        final URI uri1 = new URI(IMG1);
-        final URI uri2 = new URI(IMG2);
-        final URI uri3 = new URI(IMG3);
-
-        img1Loaded = false;
-        img2Loaded = false;
-        final ImageLoader loader = new ImageLoader();
-        loader.setDebug(true);
-        loader.addLoadingListener(new DataLoader.LoadingListener<Bitmap>() {
-
-            @Override
-            public void processStarted(Request request) {
-                LogUtil.d(OldTest.class, "loading started: " + request.getURI());
-            }
-
-            @Override
-            public void uploadingUpdateProgress(Request request, long uploadedBytes, long totalBytes) {
-                LogUtil.d(OldTest.class, "uploading progress: "+(uploadedBytes*100/totalBytes));
-            }
-
-            @Override
-            public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
-                LogUtil.d(OldTest.class, "loading progress: "+(loadedBytes*100/totalBytes));
-            }
-
-            @Override
-            public void processFinished(Request request, byte[] rawData, Bitmap data) {
-                LogUtil.d(OldTest.class, "loading finished: " + request.getURI());
-
-                Assert.assertNotNull(data);
-                // todo bitmap size asserts
-
-                // loading from cache test
-                if (request.getURI().equals(uri1) && !img1Loaded) {
-                    try { loader.addToQueue(new Request(uri1)); }
-                    catch (URISyntaxException e) { LogUtil.e(OldTest.class, "img1 adding to queue failled"); }
-                    img1Loaded = true;
-                }
-
-                if (request.getURI().equals(uri2) && !img2Loaded) {
-                    try { loader.addToQueue(new Request(uri2)); }
-                    catch (URISyntaxException e) { LogUtil.e(OldTest.class, "img2 adding to queue failled"); }
-                    img2Loaded = true;
-                }
-            }
-
-            @Override
-            public void processFailed(Request request, Exception e) {
-                LogUtil.d(OldTest.class, "loading failled: "+request.getURI());
-                LogUtil.d(OldTest.class, e.toString());
-            }
-        });
-
-        loader.addToQueue(new Request(uri1), new Point(200,200));
-        loader.addToQueue(new Request(uri2), new Point(400,400));
-        loader.addToQueue(new Request(uri3));
-
-    }
-
     public void testImageUpload() throws Exception {
         //noinspection ConstantConditions
         final Bitmap bmp1 = Bitmap.createBitmap(400, 400, Bitmap.Config.ARGB_8888);

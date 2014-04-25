@@ -27,20 +27,20 @@ public class Request {
 	private long contentLength;
 	private List<Part> params;
 	
-	public Request(URI uri) throws URISyntaxException  {
+	public Request(URI uri) {
 		this(uri, -1, null);
 	}
 
-	public Request(URI uri, long contentLength) throws URISyntaxException  {
+	public Request(URI uri, long contentLength) {
 		this(uri, contentLength, null);
 	}
 	
-	public Request(URI uri, List<Part> params) throws URISyntaxException  {
+	public Request(URI uri, List<Part> params) {
 		this(uri, -1, params);
 	}
 	
-	public Request(URI uri, long contentLength, List<Part> params) throws URISyntaxException  {
-		this.uri = new URI(Uri.encode(Uri.decode(uri.toString()),":/?="));
+	public Request(URI uri, long contentLength, List<Part> params)  {
+		this.uri = URI.create(Uri.encode(Uri.decode(uri.toString()),":/?="));
 		this.contentLength = contentLength;
 		this.params = params;
 	}

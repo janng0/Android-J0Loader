@@ -10,6 +10,8 @@ import ru.jango.j0loader.Request;
 /**
  * Default implementation of the {@link ru.jango.j0loader.queue.Queue} interface. All methods are
  * declared as 'synchronized' for safer asynchronous use.
+ * <br><br>
+ * In a queue could exist only unique requests (couldn't be added same instance twice).
  */
 public class DefaultQueue implements Queue, Iterable<Request> {
 
@@ -48,18 +50,22 @@ public class DefaultQueue implements Queue, Iterable<Request> {
 
 	@Override
 	public synchronized boolean remove(Request request) {
-		return queue.remove(request);
+        boolean mod = false;
+        while(queue.remove(request)) { mod = true; }
+		return mod;
 	}
 	
 	@Override
 	public synchronized void add(Request request) {
-		if (request != null) queue.add(request);
+		if (request != null && !contains(request))
+            queue.add(request);
 	}
 
 	@Override
 	public synchronized void addAll(Collection<? extends Request> requests) {
-		if (requests != null && !requests.isEmpty()) 
-			queue.addAll(requests);
+		if (requests != null && !requests.isEmpty())
+            for (Request request : requests)
+			    add(request);
 	}
 
     @Override
@@ -69,6 +75,11 @@ public class DefaultQueue implements Queue, Iterable<Request> {
 
         queue.add(pos, request);
         return true;
+    }
+
+    @Override
+    public synchronized int size() {
+        return queue.size();
     }
 
 	@Override

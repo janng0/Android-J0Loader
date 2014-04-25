@@ -83,22 +83,22 @@ public class ImageLoader extends DataLoader<Bitmap> {
     @Override
 	public void addToQueue(Request request) {
 		synchronized(cache) {
-			if (cache.containsKey(request.getURI()))
-				getCacheQueue().add(request);
-			else getQueue().add(request);
+            doAddToQueue(request);
 		}
 	}
 	
 	@Override
 	public void addToQueue(Collection<Request> requests) {
-		for (Request request : requests) {
-			synchronized(cache) {
-				if (cache.containsKey(request.getURI()))
-					getCacheQueue().add(request);
-				else getQueue().add(request);
-			}
+        synchronized(cache) {
+    		for (Request request : requests)
+                doAddToQueue(request);
 		}
 	}
+
+    private void doAddToQueue(Request request) {
+        if (isCached(request)) getCacheQueue().add(request);
+        else getQueue().add(request);
+    }
 
     /**
      * Adds an element into loading queues. Automatically checks cache and chooses a queue. Second
@@ -119,6 +119,8 @@ public class ImageLoader extends DataLoader<Bitmap> {
             if (scaleLarger(scale, scales.get(request.getURI()))) {
                 scales.put(request.getURI(), scale);
                 cache.remove(request.getURI());
+                getQueue().remove(request);
+                getCacheQueue().remove(request);
             }
         }
 
@@ -160,7 +162,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
         }
     }
 
-	private boolean scaleLarger(Point p1, Point p2) {
+    protected boolean scaleLarger(Point p1, Point p2) {
 		if (p1 == null && p2 == null) return false;
 		if (p1 == null) return false;
 		if (p2 == null) return true;
@@ -240,6 +242,24 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		this.maxCacheSize = maxCacheSize;
 	}
 
+    protected Map<URI, byte[]> getCache() {
+        return cache;
+    }
+
+    protected Map<URI, Point> getScales() {
+        return scales;
+    }
+
+    private void addToCache(Request request, byte[] raw) {
+        synchronized(cache) {
+            if (!cache.containsKey(request.getURI()) && getCacheSize()<=getMaxCacheSize()) {
+                cache.put(request.getURI(), raw);
+                LogUtil.i(ImageLoader.class, "added to cache; " +
+                        "cache size bytes: " + getCacheSize());
+            }
+        }
+    }
+
     ////////////////////////////////////////////////////////////////////////
     //
     //		Cache queue controlling methods
@@ -293,16 +313,6 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		return cacheQueue;
 	}
 
-    private void addToCache(Request request, byte[] raw) {
-        synchronized(cache) {
-            if (!cache.containsKey(request.getURI()) && getCacheSize()<=maxCacheSize) {
-                cache.put(request.getURI(), raw);
-                LogUtil.i(ImageLoader.class, "added to cache; " +
-                        "cache size bytes: " + getCacheSize());
-            }
-        }
-    }
-
     ////////////////////////////////////////////////////////////////////////
     //
     //		Loading methods
@@ -310,12 +320,9 @@ public class ImageLoader extends DataLoader<Bitmap> {
     ////////////////////////////////////////////////////////////////////////
 
     /**
-	 * Возвращает поток {@link Thread}, в котором исполняется очередь загрузки 
-	 * изображений из кэша. В подклассах можно переписать метод, подставив другой поток.
-	 * 
-	 * @return	поток {@link Thread}, в котором исполняется очередь загрузки 
-	 * 			изображений из кэша
-	 */
+     * Returns a {@link java.lang.Thread} where the cache queue is executed. In subclasses this
+     * method could be overwritten to provide another thread.
+     */
 	protected Thread getCacheLoaderThread() {
 		if (!(cacheLoaderThread!=null && cacheLoaderThread.isAlive())) 
 			return cacheLoaderThread = new Thread(cacheQueueRunnable);
@@ -337,7 +344,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 			if (cache.containsKey(request.getURI())) {
 				LogUtil.i(ImageLoader.class, "loading from cache: "+request.getURI());
 				
-				final byte[] raw = cache.get(request.getURI());
+				final byte[] raw = getCachedData(request);
 				postProcessFinished(request, raw, BitmapFactory.decodeByteArray(raw, 0, raw.length));
 				return true;
 			}

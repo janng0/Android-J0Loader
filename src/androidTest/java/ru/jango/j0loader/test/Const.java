@@ -16,27 +16,15 @@ public class Const {
     public static final URI JSON_SCRIPT = URI.create(BASE + "json_load.php");
 
     public enum Img {
-        SMALL(IMG_SMALL, 425, 554, 80492),
-        NORMAL(IMG_NORMAL, 1600, 1000, 483849),
-        LARGE(IMG_LARGE, 2048, 1122, 489453), // default dimens 2738x1500
-        HUGE(IMG_HUGE, 2048, 833, 1343899), // default dimens 6150x2500
-        FAKE(IMG_FAKE, -1, -1, -1);
+        SMALL(IMG_SMALL),
+        NORMAL(IMG_NORMAL),
+        LARGE(IMG_LARGE),
+        HUGE(IMG_HUGE),
+        FAKE(IMG_FAKE);
 
         private URI uri;
-        private int width;
-        private int height;
-        private long size;
 
-        private Img(URI uri, int width, int height, long size) {
-            this.uri = uri;
-            this.width = width;
-            this.height = height;
-            this.size = size;
-        }
-
+        private Img(URI uri) { this.uri = uri; }
         public URI getURI() { return uri; }
-        public int getWidth() { return width; }
-        public int getHeight() { return height; }
-        public long getSize() { return size; }
     }
 }
