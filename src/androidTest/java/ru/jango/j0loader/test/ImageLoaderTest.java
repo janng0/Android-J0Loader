@@ -9,7 +9,6 @@ import java.util.Map;
 
 import ru.jango.j0loader.Request;
 import ru.jango.j0loader.image.ImageLoader;
-import ru.jango.j0loader.queue.Queue;
 import ru.jango.j0util.LogUtil;
 
 public class ImageLoaderTest extends AndroidTestCase {
@@ -46,8 +45,8 @@ public class ImageLoaderTest extends AndroidTestCase {
         // 2
         loader.addToQueue(r1);
         loader.addToQueue(r1);
-        assertEquals(1, loader.getQueue2().size());
-        assertEquals(0, loader.getCacheQueue2().size());
+        assertEquals(1, loader.getQueueSize());
+        assertEquals(0, loader.getCacheQueueSize());
 
         // 3
         loader.getCache2().put(r2.getURI(), new byte[8]);
@@ -55,14 +54,14 @@ public class ImageLoaderTest extends AndroidTestCase {
 
         // 4
         loader.addToQueue(r2, new Point(11, 11));
-        assertEquals(1, loader.getQueue2().size());
-        assertEquals(1, loader.getCacheQueue2().size());
+        assertEquals(1, loader.getQueueSize());
+        assertEquals(1, loader.getCacheQueueSize());
         assertEquals(1, loader.getScales2().size());
 
         // 5
         loader.addToQueue(r2, new Point(100, 100));
-        assertEquals(2, loader.getQueue2().size());
-        assertEquals(0, loader.getCacheQueue2().size());
+        assertEquals(2, loader.getQueueSize());
+        assertEquals(0, loader.getCacheQueueSize());
         assertEquals(0, loader.getCache2().size());
         assertEquals(1, loader.getScales2().size());
     }
@@ -202,6 +201,7 @@ public class ImageLoaderTest extends AndroidTestCase {
         loader.addToQueue(new Request(Const.IMG_HUGE), new Point(3000, 3000)); // loaded and scaled in 2048x2048
         loader.addToQueue(new Request(Const.IMG_FAKE)); // ignored
         loader.addToQueue(new Request(Const.IMG_FAKE), new Point(300, 300)); // would fail - there is no image
+        assertEquals(5, loader.getQueueSize());
         loader.start();
 
         waitLoadingThreads(loader);
@@ -287,8 +287,5 @@ public class ImageLoaderTest extends AndroidTestCase {
 
         public Thread getLoaderThread2() { return getLoaderThread(); }
         public Thread getCacheLoaderThread2() { return getCacheLoaderThread(); }
-
-        public Queue getQueue2() { return getQueue(); }
-        public Queue getCacheQueue2() { return getCacheQueue(); }
     }
 }

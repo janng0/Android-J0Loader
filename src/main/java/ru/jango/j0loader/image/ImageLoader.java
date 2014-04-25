@@ -16,6 +16,7 @@ import ru.jango.j0loader.DataLoader;
 import ru.jango.j0loader.queue.DefaultQueue;
 import ru.jango.j0loader.queue.Queue;
 import ru.jango.j0loader.Request;
+import ru.jango.j0loader.queue.SingleURIQueue;
 import ru.jango.j0util.BmpUtil;
 import ru.jango.j0util.LogUtil;
 
@@ -72,6 +73,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		
 		cache = new HashMap<URI, byte[]>();
 		scales = new HashMap<URI, Point>();
+        cacheQueue = createCacheQueue();
 		setMaxCacheSize(DEFAULT_MAX_CACHE_SIZE);
 	}
 
@@ -96,8 +98,8 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	}
 
     private void doAddToQueue(Request request) {
-        if (isCached(request)) getCacheQueue().add(request);
-        else getQueue().add(request);
+        if (isCached(request)) cacheQueue.add(request);
+        else super.addToQueue(request);
     }
 
     /**
@@ -119,8 +121,8 @@ public class ImageLoader extends DataLoader<Bitmap> {
             if (scaleLarger(scale, scales.get(request.getURI()))) {
                 scales.put(request.getURI(), scale);
                 cache.remove(request.getURI());
-                getQueue().remove(request);
-                getCacheQueue().remove(request);
+                removeFromQueue(request);
+                removeFromCacheQueue(request);
             }
         }
 
@@ -130,9 +132,14 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	@Override
 	public void removeFromQueue(Request request) {
 		super.removeFromQueue(request);
-		getCacheQueue().remove(request);
+        removeFromCacheQueue(request);
 	}
-	
+
+    @Override
+    public Queue createQueue() {
+        return new SingleURIQueue();
+    }
+
 	@Override
 	public void start()  {
 		super.start();
@@ -242,10 +249,16 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		this.maxCacheSize = maxCacheSize;
 	}
 
+    /**
+     * Wrapper method for cache for subclasses. Basically for tests.
+     */
     protected Map<URI, byte[]> getCache() {
         return cache;
     }
 
+    /**
+     * Wrapper method for cache for subclasses. Basically for tests.
+     */
     protected Map<URI, Point> getScales() {
         return scales;
     }
@@ -274,28 +287,35 @@ public class ImageLoader extends DataLoader<Bitmap> {
      * @param request   a {@link Request} to remove
      */
     public void removeFromCacheQueue(Request request) {
-        getCacheQueue().remove(request);
+        cacheQueue.remove(request);
     }
 
-	/**
+    /**
+     * Returns number of elements in cache queue.
+     */
+    public int getCacheQueueSize() {
+        return cacheQueue.size();
+    }
+
+    /**
 	 * Checks if the cache queue has elements.
 	 */
 	public boolean isCacheQueueEmpty() {
-		return getCacheQueue().isEmpty();
+		return cacheQueue.isEmpty();
 	}
 	
 	/**
 	 * Clears cache queue.
 	 */
 	public void clearCacheQueue() {
-		getCacheQueue().clear();
+        cacheQueue.clear();
 	}
 
     /**
      * Returns current element in cache queue (witch is processed now) or null.
      */
 	public Request getCurrentCacheQueueElement() {
-		return getCacheQueue().current();
+		return cacheQueue.current();
 	}
 	
 	/**
@@ -308,9 +328,8 @@ public class ImageLoader extends DataLoader<Bitmap> {
      *
      * @return  cache loading queue instance
 	 */
-	protected Queue getCacheQueue() {
-		if (cacheQueue == null) cacheQueue = new DefaultQueue();
-		return cacheQueue;
+	protected Queue createCacheQueue() {
+		return new SingleURIQueue();
 	}
 
     ////////////////////////////////////////////////////////////////////////
@@ -381,7 +400,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 		@Override
 		public void run()  {
 			while (!isCacheQueueEmpty() && canWork()) {
-				final Request request = getCacheQueue().next();
+				final Request request = cacheQueue.next();
 				
 				try {
 					postLoadingStarted(request);

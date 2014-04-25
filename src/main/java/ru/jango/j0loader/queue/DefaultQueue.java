@@ -15,8 +15,8 @@ import ru.jango.j0loader.Request;
  */
 public class DefaultQueue implements Queue, Iterable<Request> {
 
-	private LinkedList<Request> queue;
-	private Request current;
+	protected LinkedList<Request> queue;
+    protected Request current;
 	
 	public DefaultQueue() {
 		queue = new LinkedList<Request>();
@@ -70,7 +70,7 @@ public class DefaultQueue implements Queue, Iterable<Request> {
 
     @Override
     public synchronized boolean insert(int pos, Request request) {
-        if (request == null || pos < 0 || pos > queue.size())
+        if (request == null || pos < 0 || pos > queue.size() || contains(request))
             return false;
 
         queue.add(pos, request);

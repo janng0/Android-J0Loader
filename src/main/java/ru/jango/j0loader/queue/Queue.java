@@ -7,7 +7,7 @@ import ru.jango.j0loader.Request;
 
 /**
  * Base interface for queueing {@link ru.jango.j0loader.Request} objects for loaders. Used
- * directly in {@link ru.jango.j0loader.DataLoader#getQueue()} as a part of Iterator pattern.
+ * directly in {@link ru.jango.j0loader.DataLoader#createQueue()} as a part of Iterator pattern.
  */
 public interface Queue {
 

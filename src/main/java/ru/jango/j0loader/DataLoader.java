@@ -26,7 +26,7 @@ import ru.jango.j0util.LogUtil;
  * <li>can call listeners' methods synchronously in loading thread (see {@link #setFullAsyncMode(boolean)})</li>
  * <li>provides one {@link java.lang.Thread} for asynchronous queue execution ({@link #loadInBackground(Request)})</li>
  * <li>control thread execution ({@link #canWork()}, {@link #cancelCurrent()})</li>
- * <li>control queue execution ({@link #getQueue()})</li>
+ * <li>control queue execution ({@link #createQueue()})</li>
  * </ul>
  * <br>
  *
@@ -59,6 +59,7 @@ public abstract class DataLoader<T> {
 	public DataLoader() {
 		mainThreadHandler = new Handler();
 		listeners = new HashSet<LoadingListener<T>>();
+        queue = createQueue();
 	}
 	
 	protected void logDebug(String message) {
@@ -210,7 +211,7 @@ public abstract class DataLoader<T> {
      * @param request   a {@link Request} to add
      */
     public void addToQueue(Request request) {
-        getQueue().add(request);
+        queue.add(request);
     }
 
     /**
@@ -219,7 +220,7 @@ public abstract class DataLoader<T> {
      * @param requests   a pack of {@link Request}s to add
      */
     public void addToQueue(Collection<Request> requests) {
-        getQueue().addAll(requests);
+        queue.addAll(requests);
     }
 
     /**
@@ -230,28 +231,35 @@ public abstract class DataLoader<T> {
      * @param request   a {@link Request} to remove
      */
     public void removeFromQueue(Request request) {
-        getQueue().remove(request);
+        queue.remove(request);
     }
 
     /**
      * Returns current element (witch is processed now) or null.
      */
     public Request getCurrentQueueElement() {
-        return getQueue().current();
+        return queue.current();
+    }
+
+    /**
+     * Returns number of elements in queue.
+     */
+    public int getQueueSize() {
+        return queue.size();
     }
 
     /**
      * Clears the loading queue.
      */
     public void clearQueue() {
-        getQueue().clear();
+        queue.clear();
     }
 
     /**
      * Checks if the queue is empty.
      */
     public boolean isQueueEmpty() {
-        return getQueue().isEmpty();
+        return queue.isEmpty();
     }
 
     /**
@@ -286,9 +294,8 @@ public abstract class DataLoader<T> {
      *
      * @return  loading queue instance
      */
-    protected Queue getQueue() {
-        if (queue == null) queue = new DefaultQueue();
-        return queue;
+    protected Queue createQueue() {
+        return new DefaultQueue();
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -589,7 +596,7 @@ public abstract class DataLoader<T> {
 		@Override
 		public void run()  {
 			while (!isQueueEmpty() && canWork()) {
-				final Request request = getQueue().next();
+				final Request request = queue.next();
                 currCancelled = false;
 
 				try {
