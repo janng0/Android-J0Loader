@@ -4,9 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.Point;
 import android.test.AndroidTestCase;
 
-import java.net.URI;
-import java.util.Map;
-
 import ru.jango.j0loader.Request;
 import ru.jango.j0loader.image.ImageLoader;
 import ru.jango.j0util.LogUtil;
@@ -49,21 +46,21 @@ public class ImageLoaderTest extends AndroidTestCase {
         assertEquals(0, loader.getCacheQueueSize());
 
         // 3
-        loader.getCache2().put(r2.getURI(), new byte[8]);
-        loader.getScales2().put(r2.getURI(), new Point(10, 10));
+        loader.getCache().put(r2.getURI(), new byte[8]);
+        loader.getCache().setScale(r2.getURI(), new Point(10, 10));
 
         // 4
         loader.addToQueue(r2, new Point(11, 11));
         assertEquals(1, loader.getQueueSize());
         assertEquals(1, loader.getCacheQueueSize());
-        assertEquals(1, loader.getScales2().size());
+        assertEquals(1, loader.getCache().scalesCount());
 
         // 5
         loader.addToQueue(r2, new Point(100, 100));
         assertEquals(2, loader.getQueueSize());
         assertEquals(0, loader.getCacheQueueSize());
-        assertEquals(0, loader.getCache2().size());
-        assertEquals(1, loader.getScales2().size());
+        assertEquals(0, loader.getCache().count());
+        assertEquals(1, loader.getCache().scalesCount());
     }
 
     /**
@@ -154,7 +151,7 @@ public class ImageLoaderTest extends AndroidTestCase {
                         // 5
                         if (smallReload[0] == 1) {
                             loader.addToQueue(new Request(Const.IMG_SMALL));
-                            assertEquals(1, loader.getCache2().size());
+                            assertEquals(1, loader.getCache().count());
                             smallReload[0] = 0;
                         }
                         break;
@@ -164,13 +161,13 @@ public class ImageLoaderTest extends AndroidTestCase {
                             // 3
                             assertImages(assertValues, request, rawData, data);
                             // 6
-                            assertEquals(2, loader.getCache2().size());
+                            assertEquals(2, loader.getCache().count());
                             loader.addToQueue(new Request(Const.IMG_NORMAL), new Point(400, 400));
-                            assertEquals(1, loader.getCache2().size());
+                            assertEquals(1, loader.getCache().count());
                             normalReload[0] = 0;
                         } else {
                             // 6
-                            assertEquals(4, loader.getCache2().size());
+                            assertEquals(4, loader.getCache().count());
                             assertEquals(400, data.getWidth());
                             assertEquals(250, data.getHeight());
                             assertEquals(169972, rawData.length);
@@ -281,9 +278,6 @@ public class ImageLoaderTest extends AndroidTestCase {
         public ImageLoaderWrapper(LoadingListener<Bitmap> listener) { super(listener); }
 
         public boolean scaleLarger2(Point p1, Point p2) { return scaleLarger(p1, p2); }
-
-        public Map<URI, byte[]> getCache2() { return getCache(); }
-        protected Map<URI, Point> getScales2() { return getScales(); }
 
         public Thread getLoaderThread2() { return getLoaderThread(); }
         public Thread getCacheLoaderThread2() { return getCacheLoaderThread(); }
