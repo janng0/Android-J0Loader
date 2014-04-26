@@ -5,9 +5,9 @@ import java.net.URI;
 import ru.jango.j0loader.Request;
 
 /**
- * Special queue for {@link ru.jango.j0loader.image.ImageLoader}. This loader doesn't need requests'
- * {@link ru.jango.j0loader.Request#params} - it needs only {@link java.net.URI}, so we can uniquely
- * identify a queue element by it's uri, not combination of uri-params.
+ * Special queue for {@link ru.jango.j0loader.image.ImageLoader}. Basically this loader doesn't need
+ * requests' {@link ru.jango.j0loader.Request#params} - it needs only {@link java.net.URI}, so we 
+ * can uniquely identify a queue element by it's uri, not combination of uri-params.
  * <br><br>
  * That queue checks {@link java.net.URI} inside a {@link ru.jango.j0loader.Request} before adding
  * it, so it contains requests with unique URIs.

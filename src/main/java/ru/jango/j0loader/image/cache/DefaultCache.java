@@ -30,6 +30,7 @@ public class DefaultCache implements Cache {
         setMaxCacheSize(DEFAULT_MAX_CACHE_SIZE);
     }
 
+    @Override
     public synchronized void clear() {
         clearCache();
         clearScales();
@@ -41,6 +42,7 @@ public class DefaultCache implements Cache {
     //
     ////////////////////////////////////////////////////////////////////////
 
+    @Override
     public synchronized boolean put(URI uri, byte[] raw) {
         if (size() <= getMaxCacheSize()) {
             cache.put(uri, raw);
@@ -50,23 +52,51 @@ public class DefaultCache implements Cache {
         return false;
     }
 
-    /**
-     * Pulls an image data from the cache, if it was previously cached.
-     *
-     * @return  previously cached image data, or NULL
-     * @see android.graphics.BitmapFactory#decodeByteArray(byte[], int, int)
-     */
+    @Override
     public synchronized byte[] get(URI uri) {
         return cache.get(uri);
     }
 
-    /**
-     * Removes an image from cache.
-     *
-     * @return  just removed image data, or NULL
-     */
+    @Override
     public synchronized byte[] remove(URI uri) {
         return cache.remove(uri);
+    }
+
+    @Override
+    public synchronized boolean isCached(URI uri) {
+        return cache.containsKey(uri);
+    }
+
+    @Override
+    public synchronized long size() {
+        long size = 0;
+        for (URI uri : cache.keySet())
+            size += cache.get(uri).length;
+
+        return size;
+    }
+
+    @Override
+    public synchronized int count() {
+        return cache.size();
+    }
+
+    /**
+     * Returns max allowed cache size in bytes.
+     * @see #DEFAULT_MAX_CACHE_SIZE
+     */
+    @Override
+    public long getMaxCacheSize() {
+        return maxCacheSize;
+    }
+
+    /**
+     * Sets max allowed cache size in bytes.
+     * @see #DEFAULT_MAX_CACHE_SIZE
+     */
+    @Override
+    public void setMaxCacheSize(long maxCacheSize) {
+        this.maxCacheSize = maxCacheSize;
     }
 
     /**
@@ -76,73 +106,42 @@ public class DefaultCache implements Cache {
         cache.clear();
     }
 
-    /**
-     * Checks if an image was previously cached.
-     */
-    public synchronized boolean isCached(URI uri) {
-        return cache.containsKey(uri);
-    }
-
-    /**
-     * Returns full cache size in bytes.
-     */
-    public synchronized long size() {
-        long size = 0;
-        for (URI uri : cache.keySet())
-            size += cache.get(uri).length;
-
-        return size;
-    }
-
-    public synchronized int count() {
-        return cache.size();
-    }
-
-    /**
-     * Returns max allowed cache size in bytes.
-     * @see #DEFAULT_MAX_CACHE_SIZE
-     */
-    public long getMaxCacheSize() {
-        return maxCacheSize;
-    }
-
-    /**
-     * Sets max allowed cache size in bytes.
-     * @see #DEFAULT_MAX_CACHE_SIZE
-     */
-    public void setMaxCacheSize(long maxCacheSize) {
-        this.maxCacheSize = maxCacheSize;
-    }
-
     ////////////////////////////////////////////////////////////////////////
     //
     //		Scales controlling methods
     //
     ////////////////////////////////////////////////////////////////////////
 
+    @Override
     public synchronized void setScale(URI uri, Point scale) {
         scales.put(uri, scale);
     }
 
+    @Override
     public synchronized Point getScale(URI uri) {
         return scales.get(uri);
     }
 
+    @Override
     public synchronized Point resolveScale(URI uri, byte[] loadedData) {
         final boolean tooBig = BmpUtil.isTooBig(loadedData);
+
         if (hasScale(uri)) return getScale(uri);
         else if (tooBig) return new Point(BmpUtil.MAX_TEXTURE_SIZE, BmpUtil.MAX_TEXTURE_SIZE);
         else return null;
     }
 
+    @Override
     public synchronized boolean hasScale(URI uri) {
         return scales.containsKey(uri);
     }
 
+    @Override
     public synchronized Point removeScale(URI uri) {
         return scales.remove(uri);
     }
 
+    @Override
     public synchronized int scalesCount() {
         return scales.size();
     }

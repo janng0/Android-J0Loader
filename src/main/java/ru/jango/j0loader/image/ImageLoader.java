@@ -155,11 +155,21 @@ public class ImageLoader extends DataLoader<Bitmap> {
         return new SingleURIQueue();
     }
 
+    /**
+     * Returns internal cache object. By default in {@link ru.jango.j0loader.image.ImageLoader}
+     * it is {@link ru.jango.j0loader.image.cache.DefaultCache}. With help of
+     * {@link #setCache(ru.jango.j0loader.image.cache.Cache)} you can manipulate the whole cache
+     * object at any time.
+     */
     public Cache getCache() {
         if (cache == null) cache = new DefaultCache();
         return cache;
     }
 
+    /**
+     * Sets internal cache object.  With help of {@link #getCache()} you can manipulate the
+     * whole cache object at any time.
+     */
     public void setCache(Cache cache) {
         this.cache = cache;
     }
@@ -211,7 +221,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	
 	/**
      * Special method for queue configuration. By default {@link ru.jango.j0loader.image.ImageLoader}
-     * creates an instance of {@link ru.jango.j0loader.queue.DefaultQueue}, but if a queue with
+     * creates an instance of {@link ru.jango.j0loader.queue.SingleURIQueue}, but if a queue with
      * different logic is required, it could be substituted here.
      * <br><br>
      * This method with conjunction of {@link ru.jango.j0loader.queue.Queue} hierarchy defines a
