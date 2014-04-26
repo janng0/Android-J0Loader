@@ -6,6 +6,7 @@ import android.test.AndroidTestCase;
 
 import ru.jango.j0loader.Request;
 import ru.jango.j0loader.image.ImageLoader;
+import ru.jango.j0loader.image.cache.LRUCache;
 import ru.jango.j0util.LogUtil;
 
 public class ImageLoaderTest extends AndroidTestCase {
@@ -120,6 +121,23 @@ public class ImageLoaderTest extends AndroidTestCase {
 
     /**
      * Mixed download - both from cache and URI.
+     */
+    public void testMixedDownload() throws Exception {
+        doTestMixedDownload(new ImageLoaderWrapper());
+    }
+
+    /**
+     * Mixed download - both from cache and URI. Also use LRUCache instead of default.
+     */
+    public void testMixedDownloadLRUCache() throws Exception {
+        final ImageLoaderWrapper loader = new ImageLoaderWrapper();
+        loader.setCache(new LRUCache());
+
+        doTestMixedDownload(loader);
+    }
+
+    /**
+     * Mixed download - both from cache and URI.
      * 1) create a loader
      * 2) init queue with all images from Const (some should be added several times and with scales)
      * 3) check loaded images dimensions and sizes
@@ -127,12 +145,11 @@ public class ImageLoaderTest extends AndroidTestCase {
      * 5) after loading small image, require it again - it should be loaded from cache in the same size
      * 6) after loading normal image, require it again with larger scale - it should be reloaded and recached
      */
-    public void testMixedDownload() throws Exception {
+    private void doTestMixedDownload(final ImageLoaderWrapper loader) throws Exception {
         // 1
         final int[][] assertValues = {{153, 200, 45016}, {1600, 1000, 483849},
                 {399, 218, 136436}, {2000, 812, 1688679}};
         final int[] smallReload = {1}, normalReload = {1};
-        final ImageLoaderWrapper loader = new ImageLoaderWrapper();
         loader.setDebug(true);
         loader.setFullAsyncMode(true);
         loader.addLoadingListener(new LoadingAdapter2<Bitmap>() {

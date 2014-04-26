@@ -27,7 +27,7 @@ public class DefaultCache implements Cache {
     public DefaultCache() {
         cache = new HashMap<URI, byte[]>();
 		scales = new HashMap<URI, Point>();
-        setMaxCacheSize(DEFAULT_MAX_CACHE_SIZE);
+        maxCacheSize = DEFAULT_MAX_CACHE_SIZE;
     }
 
     @Override

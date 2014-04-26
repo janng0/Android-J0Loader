@@ -15,7 +15,7 @@ repositories {
 }
 
 android {
-    compileSdkVersion 10
+    compileSdkVersion 14
     buildToolsVersion '19.0.3'
 
     defaultConfig {
@@ -26,6 +26,7 @@ android {
 
 dependencies {
     compile files('libs/J0Util-1.0.jar')
+    compile 'com.android.support:appcompat-v7:+'
     androidTestCompile 'junit:junit:4.8.1@jar'
 }
 
