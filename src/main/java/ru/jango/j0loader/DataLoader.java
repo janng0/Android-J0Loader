@@ -1,5 +1,6 @@
 package ru.jango.j0loader;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -340,20 +341,20 @@ public abstract class DataLoader<T> {
 		int nRead, totalRead = 0;
 		byte[] data = new byte[BUFFER_SIZE_BYTES];
 
-        // TODO wrap InputStream in BufferedInputStream
 		final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-		while ((nRead = in.read(data, 0, data.length))!=-1 && canWork() && !isCurrentCancelled())  {
+        final BufferedInputStream input = new BufferedInputStream(in);
+		while ((nRead = input.read(data, 0, data.length))!=-1 && canWork() && !isCurrentCancelled())  {
 			buffer.write(data, 0, nRead);
 			totalRead += nRead;
 			
 			boolean updateProgress = System.currentTimeMillis() > progressLastUpdated + PROGRESS_UPDATE_INTERVAL_MS;
-			if (request.getContentLength()!=-1 && updateProgress) {
+			if (request.getResponseContentLength()!=-1 && updateProgress) {
 				progressLastUpdated = System.currentTimeMillis();
-				postDownloadingUpdateProgress(request, totalRead, request.getContentLength());
+				postDownloadingUpdateProgress(request, totalRead, request.getResponseContentLength());
 			}
 		}
 		buffer.flush();
-		
+
 		final byte[] ret = buffer.toByteArray();
 		buffer.close();
         logDebug("doLoad: " + request.getURI() + " : " + (new String(ret, "UTF-8"))); 
@@ -363,14 +364,13 @@ public abstract class DataLoader<T> {
 	/**
      * Helper method for subclasses - actually opens an {@link java.io.InputStream} and sets
      * content length inside the passed {@link ru.jango.j0loader.Request} object -
-     * {@link ru.jango.j0loader.Request#setContentLength(long)}.
+     * {@link ru.jango.j0loader.Request#setResponseContentLength(long)}.
 	 */
 	protected InputStream openInputStream(Request request) throws IOException, URISyntaxException {
 		final URLConnection urlConnection = request.getURL().openConnection();
         configURLConnection(urlConnection);
 
-        // TODO check getContentLength() with File sheme
-		request.setContentLength(urlConnection.getContentLength());
+		request.setResponseContentLength(urlConnection.getContentLength());
 		return urlConnection.getInputStream();
 	}
 

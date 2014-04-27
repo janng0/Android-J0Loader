@@ -1,7 +1,6 @@
 package ru.jango.j0loader.test;
 
 import android.graphics.Bitmap;
-import android.graphics.Point;
 import android.test.AndroidTestCase;
 
 import junit.framework.Assert;
@@ -9,14 +8,12 @@ import junit.framework.Assert;
 import org.json.JSONArray;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 import ru.jango.j0loader.DataLoader;
 import ru.jango.j0loader.JSONLoader;
 import ru.jango.j0loader.ParamedLoader;
 import ru.jango.j0loader.Request;
-import ru.jango.j0loader.image.ImageLoader;
 import ru.jango.j0loader.part.BitmapPart;
 import ru.jango.j0loader.part.Part;
 import ru.jango.j0loader.part.StringPart;
@@ -27,9 +24,6 @@ public class OldTest extends AndroidTestCase {
 
     private static final String BASE = "http://funsellers.ru/libs_test/ffsLoader/";
 
-    private static final String IMG1 = BASE + "1.jpg";
-    private static final String IMG2 = BASE + "2.jpg";
-    private static final String IMG3 = BASE + "3.jpg";
     private static final String UPLOAD = BASE + "upload.php";
     private static final String JSON_LOAD = BASE + "json_load.php";
 

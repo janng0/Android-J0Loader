@@ -1,12 +1,19 @@
-package ru.jango.j0loader.test;
+package ru.jango.j0loader.test.image;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Point;
 import android.test.AndroidTestCase;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.net.URI;
 
 import ru.jango.j0loader.Request;
 import ru.jango.j0loader.image.ImageLoader;
 import ru.jango.j0loader.image.cache.LRUCache;
+import ru.jango.j0loader.test.Const;
+import ru.jango.j0loader.test.LoadingAdapter2;
 import ru.jango.j0util.LogUtil;
 
 public class ImageLoaderTest extends AndroidTestCase {
@@ -65,6 +72,49 @@ public class ImageLoaderTest extends AndroidTestCase {
     }
 
     /**
+     * Test loading from file - it should work just the same way as HTTP downloading, since URI and
+     * URLConnection both can work file file:// schema.
+     * 1) prepare bitmap and paths
+     * 2) save bitmap from resources in internal storage
+     * 3) "download" saved bitmap
+     * 4) check content size in Request object
+     * 5) check bitmap itself
+     */
+    public void testFileDownload() throws Exception {
+        // 1
+        //noinspection ConstantConditions
+        final Bitmap small = BitmapFactory.decodeResource(getContext().getResources(), ru.jango.j0loader.test.R.drawable.small);
+        final File path = new File(getContext().getFilesDir(), "small.jpg");
+        final URI smallUri = new URI("file://" + path.getAbsolutePath());
+
+        // 2
+        final FileOutputStream fos = new FileOutputStream(path);
+        small.compress(Bitmap.CompressFormat.JPEG, 100, fos);
+        fos.close();
+
+        // 3
+        final ImageLoaderWrapper loader = new ImageLoaderWrapper(new LoadingAdapter2<Bitmap>() {
+            @Override
+            public void processFinished(Request request, byte[] rawData, Bitmap data) {
+                super.processFinished(request, rawData, data);
+
+                // 4
+                LogUtil.d(ImageLoaderTest.class, "file content length = " + request.getResponseContentLength());
+                assertTrue(request.getResponseContentLength() != -1);
+
+                // 5
+                assertEquals(850, data.getWidth());
+                assertEquals(1108, data.getHeight());
+                assertEquals(489061, rawData.length);
+            }
+        });
+        loader.addToQueue(new Request(smallUri));
+        loader.start();
+
+        waitLoadingThreads(loader);
+    }
+
+    /**
      * Simple downloading without scaling.
      * 1) create a loader
      * 2) init queue with all images from Const
@@ -76,8 +126,6 @@ public class ImageLoaderTest extends AndroidTestCase {
         final int[][] assertValues = {{425, 554, 80492}, {1600, 1000, 483849},
                 {1999, 1095, 1978649}, {2000, 812, 1688679}};
         final ImageLoaderWrapper loader = new ImageLoaderWrapper(new AssertListener(assertValues));
-        loader.setDebug(true);
-        loader.setFullAsyncMode(true);
 
         // 2
         for (Const.Img img : Const.Img.values())
@@ -100,8 +148,6 @@ public class ImageLoaderTest extends AndroidTestCase {
         final int[][] assertValues = {{153, 200, 45016}, {1600, 1000, 483849},
                 {399, 218, 136436}, {2000, 812, 1688679}};
         final ImageLoaderWrapper loader = new ImageLoaderWrapper(new AssertListener(assertValues));
-        loader.setDebug(true);
-        loader.setFullAsyncMode(true);
 
         // 2
         loader.addToQueue(new Request(Const.IMG_SMALL)); // would be ignored
@@ -150,8 +196,6 @@ public class ImageLoaderTest extends AndroidTestCase {
         final int[][] assertValues = {{153, 200, 45016}, {1600, 1000, 483849},
                 {399, 218, 136436}, {2000, 812, 1688679}};
         final int[] smallReload = {1}, normalReload = {1};
-        loader.setDebug(true);
-        loader.setFullAsyncMode(true);
         loader.addLoadingListener(new LoadingAdapter2<Bitmap>() {
             @Override
             public void processFinished(Request request, byte[] rawData, Bitmap data) {
@@ -291,8 +335,17 @@ public class ImageLoaderTest extends AndroidTestCase {
     }
 
     private class ImageLoaderWrapper extends ImageLoader {
-        public ImageLoaderWrapper() { super(); }
-        public ImageLoaderWrapper(LoadingListener<Bitmap> listener) { super(listener); }
+        public ImageLoaderWrapper() {
+            super();
+            setDebug(true);
+            setFullAsyncMode(true);
+        }
+
+        public ImageLoaderWrapper(LoadingListener<Bitmap> listener) {
+            super(listener);
+            setDebug(true);
+            setFullAsyncMode(true);
+        }
 
         public boolean scaleLarger2(Point p1, Point p2) { return scaleLarger(p1, p2); }
 

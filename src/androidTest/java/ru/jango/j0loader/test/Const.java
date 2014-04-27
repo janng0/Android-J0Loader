@@ -2,6 +2,8 @@ package ru.jango.j0loader.test;
 
 import java.net.URI;
 
+import ru.jango.j0loader.part.StringPart;
+
 public class Const {
 
     public static final String BASE = "http://192.168.1.2/j0Loader/";
@@ -12,8 +14,16 @@ public class Const {
     public static final URI IMG_HUGE = URI.create(BASE + "huge.jpg");
     public static final URI IMG_FAKE = URI.create(BASE + "fake.jpg");
 
-    public static final URI UPLOAD_SCRIPT = URI.create(BASE + "upload.php");
-    public static final URI JSON_SCRIPT = URI.create(BASE + "json_load.php");
+
+    public static final URI PARAMED_LOADER_TEST_SCRIPT = URI.create(BASE + "ParamedLoader_test.php");
+    public static final String PARAM_BMP = "bmp";
+    public static final String PARAM_TEST_NAME = "test_name";
+
+    public static final StringPart PART_TEST_SIMPLE_REQUEST = new StringPart(PARAM_TEST_NAME, "simple_request");
+
+    public static final StringPart PART1 = new StringPart("p1", "param1");
+    public static final StringPart PART2 = new StringPart("p2", "some param2");
+    public static final StringPart PART3 = new StringPart("p3", "*some param3*");
 
     public enum Img {
         SMALL(IMG_SMALL),

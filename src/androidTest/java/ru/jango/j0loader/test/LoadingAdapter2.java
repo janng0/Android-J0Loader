@@ -1,8 +1,5 @@
 package ru.jango.j0loader.test;
 
-import android.graphics.Bitmap;
-
-import ru.jango.j0loader.DataLoader;
 import ru.jango.j0loader.LoadingAdapter;
 import ru.jango.j0loader.Request;
 import ru.jango.j0util.LogUtil;

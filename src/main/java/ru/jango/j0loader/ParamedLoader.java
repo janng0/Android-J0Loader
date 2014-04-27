@@ -1,5 +1,6 @@
 package ru.jango.j0loader;
 
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,7 +28,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
         configURLConnection(urlConnection);
 		sendParams(request, urlConnection);
 
-		request.setContentLength(urlConnection.getContentLength());
+		request.setResponseContentLength(urlConnection.getContentLength());
 		return urlConnection.getInputStream();
 	}
 
@@ -74,12 +75,12 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 		int offset, count, uploadedBytes = 0;
 		boolean updateProgress;
 
-        // TODO wrap OutputStream in BufferedOutputStream
+        final BufferedOutputStream output = new BufferedOutputStream(out);
 		for (byte[] entity : entities) {
 			offset = 0;
 			while (offset < entity.length && canWork() && !isCurrentCancelled()) {
 				count = Math.min(entity.length - offset, BUFFER_SIZE_BYTES);
-				out.write(entity, offset, count);
+                output.write(entity, offset, count);
 				offset += count;
 				uploadedBytes += count;
 				
@@ -93,7 +94,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 		logDebug("writeEntities: " + request.getURI() + " : " + "entity wrote: " 
 				+ (new String(entity, "UTF-8")));
 		}
-		
-        out.flush();
+
+        output.flush();
 	}
 }
