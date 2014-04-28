@@ -14,7 +14,6 @@ public class Const {
     public static final URI IMG_HUGE = URI.create(BASE + "huge.jpg");
     public static final URI IMG_FAKE = URI.create(BASE + "fake.jpg");
 
-
     public static final URI PARAMED_LOADER_TEST_SCRIPT = URI.create(BASE + "ParamedLoader_test.php");
     public static final String PARAM_BMP = "bmp";
     public static final String PARAM_TEST_NAME = "test_name";
@@ -23,7 +22,19 @@ public class Const {
 
     public static final StringPart PART1 = new StringPart("p1", "param1");
     public static final StringPart PART2 = new StringPart("p2", "some param2");
-    public static final StringPart PART3 = new StringPart("p3", "*some param3*");
+    public static final StringPart PART3 = new StringPart("p3", "*школоло param3*");
+    public static final StringPart PART4_LONG = new StringPart("p4_long", genLongString(255));
+
+    public static String genLongString(int len) {
+        final StringBuilder sb = new StringBuilder();
+        final byte[] tmp = new byte[1];
+        for (int i=0; i<len; i++) {
+            tmp[0] = (byte) (Math.random()*255);
+            sb.append(new String(tmp));
+        }
+
+        return sb.toString();
+    }
 
     public enum Img {
         SMALL(IMG_SMALL),
