@@ -4,7 +4,7 @@ import java.net.URI;
 
 import ru.jango.j0loader.param.StringParam;
 
-public class Const {
+public class Settings {
 
     public static final String BASE = "http://192.168.1.3/j0Loader/";
 
@@ -23,10 +23,11 @@ public class Const {
     public static final StringParam PARAM_BITMAP_REQUEST = new StringParam(PARAM_TEST_NAME, "bitmap_request");
     public static final StringParam PARAM_MIXED_REQUEST = new StringParam(PARAM_TEST_NAME, "mixed_request");
 
-    public static final StringParam PART1 = new StringParam("p1", "param1");
-    public static final StringParam PART2 = new StringParam("p2", "some param2");
-    public static final StringParam PART3 = new StringParam("p3", "*школоло param3*");
-    public static final StringParam PART4_LONG = new StringParam("p4_long", genLongString(255));
+    public static final String PARAM_BMP_NAME = "bmp";
+    public static final StringParam PARAM1 = new StringParam("p1", "param1");
+    public static final StringParam PARAM2 = new StringParam("p2", "some param2");
+    public static final StringParam PARAM3 = new StringParam("p3", "*школоло param3*");
+    public static final StringParam PARAM4_LONG = new StringParam("p4_long", genLongString(255));
 
     public static String genLongString(int len) {
         final StringBuilder sb = new StringBuilder();

@@ -12,7 +12,7 @@ import java.net.URI;
 import ru.jango.j0loader.Request;
 import ru.jango.j0loader.image.ImageLoader;
 import ru.jango.j0loader.image.cache.LRUCache;
-import ru.jango.j0loader.test.Const;
+import ru.jango.j0loader.test.Settings;
 import ru.jango.j0loader.test.LoadingAdapter2;
 import ru.jango.j0util.LogUtil;
 
@@ -44,8 +44,8 @@ public class ImageLoaderTest extends AndroidTestCase {
     public void testAddToQueue() throws Exception {
         // 1
         final ImageLoaderWrapper loader = new ImageLoaderWrapper();
-        final Request r1 = new Request(Const.IMG_SMALL);
-        final Request r2 = new Request(Const.IMG_NORMAL);
+        final Request r1 = new Request(Settings.IMG_SMALL);
+        final Request r2 = new Request(Settings.IMG_NORMAL);
 
         // 2
         loader.addToQueue(r1);
@@ -117,9 +117,9 @@ public class ImageLoaderTest extends AndroidTestCase {
     /**
      * Simple downloading without scaling.
      * 1) create a loader
-     * 2) init queue with all images from Const
+     * 2) init queue with all images from Settings
      * 3) check loaded images dimensions and sizes
-     * 4) check failed image (Const.FAKE) (by URI)
+     * 4) check failed image (Settings.FAKE) (by URI)
      */
     public void testSimpleDownload() throws Exception {
         // 1
@@ -128,7 +128,7 @@ public class ImageLoaderTest extends AndroidTestCase {
         final ImageLoaderWrapper loader = new ImageLoaderWrapper(new AssertListener(assertValues));
 
         // 2
-        for (Const.Img img : Const.Img.values())
+        for (Settings.Img img : Settings.Img.values())
             loader.addToQueue(new Request(img.getURI()));
         loader.start();
 
@@ -139,9 +139,9 @@ public class ImageLoaderTest extends AndroidTestCase {
     /**
      * Loading images with scaling.
      * 1) create a loader
-     * 2) init queue with all images from Const (some should be added several times and with scales)
+     * 2) init queue with all images from Settings (some should be added several times and with scales)
      * 3) check loaded images dimensions and sizes
-     * 4) check failed image (Const.FAKE) (by URI)
+     * 4) check failed image (Settings.FAKE) (by URI)
      */
     public void testScalingDownload() throws Exception {
         // 1
@@ -150,15 +150,15 @@ public class ImageLoaderTest extends AndroidTestCase {
         final ImageLoaderWrapper loader = new ImageLoaderWrapper(new AssertListener(assertValues));
 
         // 2
-        loader.addToQueue(new Request(Const.IMG_SMALL)); // would be ignored
-        loader.addToQueue(new Request(Const.IMG_SMALL), new Point(200, 200)); // would be loaded and scaled
-        loader.addToQueue(new Request(Const.IMG_SMALL)); // ignored
-        loader.addToQueue(new Request(Const.IMG_NORMAL)); // loaded
-        loader.addToQueue(new Request(Const.IMG_LARGE), new Point(400, 400)); // loaded and scaled
-        loader.addToQueue(new Request(Const.IMG_HUGE)); // ignored
-        loader.addToQueue(new Request(Const.IMG_HUGE), new Point(3000, 3000)); // loaded and scaled in 2048x2048
-        loader.addToQueue(new Request(Const.IMG_FAKE)); // ignored
-        loader.addToQueue(new Request(Const.IMG_FAKE), new Point(300, 300)); // would fail - there is no image
+        loader.addToQueue(new Request(Settings.IMG_SMALL)); // would be ignored
+        loader.addToQueue(new Request(Settings.IMG_SMALL), new Point(200, 200)); // would be loaded and scaled
+        loader.addToQueue(new Request(Settings.IMG_SMALL)); // ignored
+        loader.addToQueue(new Request(Settings.IMG_NORMAL)); // loaded
+        loader.addToQueue(new Request(Settings.IMG_LARGE), new Point(400, 400)); // loaded and scaled
+        loader.addToQueue(new Request(Settings.IMG_HUGE)); // ignored
+        loader.addToQueue(new Request(Settings.IMG_HUGE), new Point(3000, 3000)); // loaded and scaled in 2048x2048
+        loader.addToQueue(new Request(Settings.IMG_FAKE)); // ignored
+        loader.addToQueue(new Request(Settings.IMG_FAKE), new Point(300, 300)); // would fail - there is no image
         loader.start();
 
         // 3-4 - auto in AssertListener
@@ -185,9 +185,9 @@ public class ImageLoaderTest extends AndroidTestCase {
     /**
      * Mixed download - both from cache and URI.
      * 1) create a loader
-     * 2) init queue with all images from Const (some should be added several times and with scales)
+     * 2) init queue with all images from Settings (some should be added several times and with scales)
      * 3) check loaded images dimensions and sizes
-     * 4) check failed image (Const.FAKE) (by URI)
+     * 4) check failed image (Settings.FAKE) (by URI)
      * 5) after loading small image, require it again - it should be loaded from cache in the same size
      * 6) after loading normal image, require it again with larger scale - it should be reloaded and recached
      */
@@ -202,7 +202,7 @@ public class ImageLoaderTest extends AndroidTestCase {
                 super.processFinished(request, rawData, data);
                 LogUtil.d(ImageLoaderTest.class, "bitmap loaded " + data.getWidth() + "x" + data.getHeight());
 
-                final Const.Img img = getImg(request);
+                final Settings.Img img = getImg(request);
                 assertNotNull(img);
 
                 switch (img) {
@@ -211,7 +211,7 @@ public class ImageLoaderTest extends AndroidTestCase {
                         assertImages(assertValues, request, rawData, data);
                         // 5
                         if (smallReload[0] == 1) {
-                            loader.addToQueue(new Request(Const.IMG_SMALL));
+                            loader.addToQueue(new Request(Settings.IMG_SMALL));
                             assertEquals(1, loader.getCache().count());
                             smallReload[0] = 0;
                         }
@@ -223,7 +223,7 @@ public class ImageLoaderTest extends AndroidTestCase {
                             assertImages(assertValues, request, rawData, data);
                             // 6
                             assertEquals(2, loader.getCache().count());
-                            loader.addToQueue(new Request(Const.IMG_NORMAL), new Point(400, 400));
+                            loader.addToQueue(new Request(Settings.IMG_NORMAL), new Point(400, 400));
                             assertEquals(1, loader.getCache().count());
                             normalReload[0] = 0;
                         } else {
@@ -245,20 +245,20 @@ public class ImageLoaderTest extends AndroidTestCase {
             public void processFailed(Request request, Exception e) {
                 super.processFailed(request, e);
                 // 4
-                assertTrue(request.getURI().equals(Const.IMG_FAKE));
+                assertTrue(request.getURI().equals(Settings.IMG_FAKE));
             }
         });
 
         // 2
-        loader.addToQueue(new Request(Const.IMG_SMALL)); // would be ignored
-        loader.addToQueue(new Request(Const.IMG_SMALL), new Point(200, 200)); // would be loaded and scaled
-        loader.addToQueue(new Request(Const.IMG_SMALL)); // ignored
-        loader.addToQueue(new Request(Const.IMG_NORMAL)); // loaded
-        loader.addToQueue(new Request(Const.IMG_LARGE), new Point(400, 400)); // loaded and scaled
-        loader.addToQueue(new Request(Const.IMG_HUGE)); // ignored
-        loader.addToQueue(new Request(Const.IMG_HUGE), new Point(3000, 3000)); // loaded and scaled in 2048x2048
-        loader.addToQueue(new Request(Const.IMG_FAKE)); // ignored
-        loader.addToQueue(new Request(Const.IMG_FAKE), new Point(300, 300)); // would fail - there is no image
+        loader.addToQueue(new Request(Settings.IMG_SMALL)); // would be ignored
+        loader.addToQueue(new Request(Settings.IMG_SMALL), new Point(200, 200)); // would be loaded and scaled
+        loader.addToQueue(new Request(Settings.IMG_SMALL)); // ignored
+        loader.addToQueue(new Request(Settings.IMG_NORMAL)); // loaded
+        loader.addToQueue(new Request(Settings.IMG_LARGE), new Point(400, 400)); // loaded and scaled
+        loader.addToQueue(new Request(Settings.IMG_HUGE)); // ignored
+        loader.addToQueue(new Request(Settings.IMG_HUGE), new Point(3000, 3000)); // loaded and scaled in 2048x2048
+        loader.addToQueue(new Request(Settings.IMG_FAKE)); // ignored
+        loader.addToQueue(new Request(Settings.IMG_FAKE), new Point(300, 300)); // would fail - there is no image
         assertEquals(5, loader.getQueueSize());
         loader.start();
 
@@ -270,8 +270,8 @@ public class ImageLoaderTest extends AndroidTestCase {
         while(loader.getLoaderThread2().isAlive() || loader.getCacheLoaderThread2().isAlive()) {}
     }
 
-    private Const.Img getImg(Request request) {
-        for (Const.Img img : Const.Img.values())
+    private Settings.Img getImg(Request request) {
+        for (Settings.Img img : Settings.Img.values())
             if (img.getURI().equals(request.getURI()))
                 return img;
 
@@ -279,7 +279,7 @@ public class ImageLoaderTest extends AndroidTestCase {
     }
 
     private void assertImages(int[][] values, Request request, byte[] rawData, Bitmap data) {
-        final Const.Img img = getImg(request);
+        final Settings.Img img = getImg(request);
         assertNotNull(img);
 
         switch (img) {
@@ -330,7 +330,7 @@ public class ImageLoaderTest extends AndroidTestCase {
         @Override
         public void processFailed(Request request, Exception e) {
             super.processFailed(request, e);
-            assertTrue(request.getURI().equals(Const.IMG_FAKE));
+            assertTrue(request.getURI().equals(Settings.IMG_FAKE));
         }
     }
 

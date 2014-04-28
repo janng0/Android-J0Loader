@@ -26,7 +26,7 @@ public class ParamedLoaderTest extends AndroidTestCase {
      */
     public void testSimpleRequest() throws Exception {
         final String check = "no парамз!";
-        final Request request = new Request(Const.PARAMED_LOADER_TEST_SCRIPT);
+        final Request request = new Request(Settings.PARAMED_LOADER_TEST_SCRIPT);
 
         doTest(request, check);
     }
@@ -40,10 +40,10 @@ public class ParamedLoaderTest extends AndroidTestCase {
      * 4) still in progress...
      */
     public void testShortTextRequest() throws Exception {
-        final String check = Const.PART1.getData() + " -- " + Const.PART2.getData() +
-                " -- " + Const.PART3.getData();
-        final Request request = new Request(Const.PARAMED_LOADER_TEST_SCRIPT);
-        request.setRequestParams(getParts(Const.PARAM_SHORT_TEXT_REQUEST, false, false));
+        final String check = Settings.PARAM1.getData() + " -- " + Settings.PARAM2.getData() +
+                " -- " + Settings.PARAM3.getData();
+        final Request request = new Request(Settings.PARAMED_LOADER_TEST_SCRIPT);
+        request.setRequestParams(getParts(Settings.PARAM_SHORT_TEXT_REQUEST, false, false));
 
         doTest(request, check);
     }
@@ -57,11 +57,11 @@ public class ParamedLoaderTest extends AndroidTestCase {
      * 4) yet close...
      */
     public void testLongTextRequest() throws Exception {
-        final Request request = new Request(Const.PARAMED_LOADER_TEST_SCRIPT);
-        request.setRequestParams(getParts(Const.PARAM_LONG_TEXT_REQUEST, false, true));
-        final String check = Const.PART1.getData() + " -- " + Const.PART2.getData() +
-                " -- " + Const.PART3.getData() + " -- " +
-                request.getRequestParams().get(4).getRawData().length;
+        final Request request = new Request(Settings.PARAMED_LOADER_TEST_SCRIPT);
+        request.setRequestParams(getParts(Settings.PARAM_LONG_TEXT_REQUEST, false, true));
+        final String check = Settings.PARAM1.getData() + " -- " + Settings.PARAM2.getData() +
+                " -- " + Settings.PARAM3.getData() + " -- " +
+                Settings.PARAM4_LONG.getRawData().length;
 
         doTest(request, check);
     }
@@ -74,10 +74,10 @@ public class ParamedLoaderTest extends AndroidTestCase {
      */
     public void testBitmapRequest() throws Exception {
         final List<Param> params = new ArrayList<Param>();
-        params.add(Const.PARAM_BITMAP_REQUEST);
-        params.add(new BitmapParam("bmp", Bitmap.CompressFormat.JPEG, getBitmap()));
+        params.add(Settings.PARAM_BITMAP_REQUEST);
+        params.add(new BitmapParam(Settings.PARAM_BMP_NAME, Bitmap.CompressFormat.JPEG, getBitmap()));
 
-        final Request request = new Request(Const.PARAMED_LOADER_TEST_SCRIPT);
+        final Request request = new Request(Settings.PARAMED_LOADER_TEST_SCRIPT);
         request.setRequestParams(params);
 
         final String check = "битмапа - ok";
@@ -90,11 +90,11 @@ public class ParamedLoaderTest extends AndroidTestCase {
      * Yo! Who needs dat tests Oo I'm done!
      */
     public void testMixedRequest() throws Exception {
-        final Request request = new Request(Const.PARAMED_LOADER_TEST_SCRIPT);
-        request.setRequestParams(getParts(Const.PARAM_MIXED_REQUEST, true, true));
-        final String check = Const.PART1.getData() + " -- " + Const.PART2.getData() +
-                " -- " + Const.PART3.getData() + " -- " +
-                request.getRequestParams().get(4).getRawData().length + " -- " +
+        final Request request = new Request(Settings.PARAMED_LOADER_TEST_SCRIPT);
+        request.setRequestParams(getParts(Settings.PARAM_MIXED_REQUEST, true, true));
+        final String check = Settings.PARAM1.getData() + " -- " + Settings.PARAM2.getData() +
+                " -- " + Settings.PARAM3.getData() + " -- " +
+                Settings.PARAM4_LONG.getRawData().length + " -- " +
                 "битмапа - ok";
 
         doTest(request, check);
@@ -126,12 +126,12 @@ public class ParamedLoaderTest extends AndroidTestCase {
         final List<Param> params = new ArrayList<Param>();
 
         params.add(testName);
-        params.add(Const.PART1);
-        params.add(Const.PART2);
-        params.add(Const.PART3);
-        if (includeLongStr) params.add(Const.PART4_LONG);
+        params.add(Settings.PARAM1);
+        params.add(Settings.PARAM2);
+        params.add(Settings.PARAM3);
+        if (includeLongStr) params.add(Settings.PARAM4_LONG);
         if (includeBmp)
-            params.add(new BitmapParam("bmp",
+            params.add(new BitmapParam(Settings.PARAM_BMP_NAME,
                     Bitmap.CompressFormat.JPEG,
                     getBitmap()));
 
