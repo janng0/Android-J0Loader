@@ -2,7 +2,9 @@ package ru.jango.j0loader;
 
 import android.net.Uri;
 
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -193,6 +195,13 @@ public class Request {
     }
 
     /**
+     * Same as {@link #getComposedURI()} but already transformed into {@link java.net.URL}.
+     */
+    public URL getComposedURL() throws URISyntaxException, MalformedURLException {
+        return getComposedURI().toURL();
+    }
+
+    /**
      * Looks through request params list and returns desired method for sending them. HTTP GET is
      * in priority, so if it could be used, then {@link ru.jango.j0loader.Request.Method#GET} will
      * be returned.
@@ -230,6 +239,24 @@ public class Request {
     }
 
     public enum Method {
-        POST, GET
+        POST {
+            @Override
+            public void configURLConnection(HttpURLConnection urlConnection)  throws ProtocolException {
+                urlConnection.setDoOutput(true);
+                urlConnection.setRequestMethod("POST");
+                urlConnection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Param.BOUNDARY);
+            }
+        },
+
+        GET {
+            @Override
+            public void configURLConnection(HttpURLConnection urlConnection)  throws ProtocolException {
+                urlConnection.setDoOutput(false);
+                urlConnection.setRequestMethod("GET");
+                urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            }
+        };
+
+        public abstract void configURLConnection(HttpURLConnection urlConnection) throws ProtocolException;
     }
 }

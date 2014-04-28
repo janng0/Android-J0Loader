@@ -20,14 +20,13 @@ import ru.jango.j0loader.param.Param;
  *              {@link ru.jango.j0loader.DataLoader.LoadingListener#processFinished(Request, byte[], Object)}
  */
 public abstract class ParamedLoader<T> extends DataLoader<T> {
-    // TODO look through the List<Param> and use HTTP GET in certain cases (not always POST)
 
 	@Override
 	protected InputStream openInputStream(Request request) throws IOException, URISyntaxException {
-		final HttpURLConnection urlConnection = (HttpURLConnection) request.getURL().openConnection();
-        configURLConnection(urlConnection);
-		sendParams(request, urlConnection);
+		final HttpURLConnection urlConnection = (HttpURLConnection) request.getComposedURL().openConnection();
+        configURLConnection(request, urlConnection);
 
+        if (request.getMethod() == Request.Method.POST) sendParams(request, urlConnection);
 		request.setResponseContentLength(urlConnection.getContentLength());
 		return urlConnection.getInputStream();
 	}
@@ -35,18 +34,17 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
     /**
      * Applies configurations to specified {@link java.net.HttpURLConnection}.
      */
-	protected void configURLConnection(HttpURLConnection urlConnection) throws ProtocolException {
+	protected void configURLConnection(Request request, HttpURLConnection urlConnection) throws ProtocolException {
         super.configURLConnection(urlConnection);
+        request.getMethod().configURLConnection(urlConnection);
 
-		urlConnection.setDoOutput(true);
-		urlConnection.setRequestMethod("POST");
-		urlConnection.setRequestProperty("Connection", "Keep-Alive");
-		urlConnection.setRequestProperty("Cache-Control", "no-cache");
-		urlConnection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Param.BOUNDARY);
+//        urlConnection.setChunkedStreamingMode(0);
+        urlConnection.setRequestProperty("Connection", "Keep-Alive");
+        urlConnection.setRequestProperty("Cache-Control", "no-cache");
 	}
-	
-	private void sendParams(Request request, HttpURLConnection urlConnection) throws IOException, URISyntaxException {
-		final OutputStream out = urlConnection.getOutputStream();          
+
+    protected void sendParams(Request request, HttpURLConnection urlConnection) throws IOException, URISyntaxException {
+		final OutputStream out = urlConnection.getOutputStream();
 		out.write((Param.HYPHENS + Param.BOUNDARY + Param.RN).getBytes("UTF-8"));
 		
 		// generate entities and count content length for uploading

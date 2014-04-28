@@ -15,10 +15,13 @@ public class Const {
     public static final URI IMG_FAKE = URI.create(BASE + "fake.jpg");
 
     public static final URI PARAMED_LOADER_TEST_SCRIPT = URI.create(BASE + "ParamedLoader_test.php");
-    public static final String PARAM_BMP = "bmp";
-    public static final String PARAM_TEST_NAME = "test_name";
+    public static final URI JSON_LOADER_TEST_SCRIPT = URI.create(BASE + "JSONLoader_test.php");
 
-    public static final StringParam PART_TEST_SIMPLE_REQUEST = new StringParam(PARAM_TEST_NAME, "simple_request");
+    public static final String PARAM_TEST_NAME = "test_name";
+    public static final StringParam PARAM_SHORT_TEXT_REQUEST = new StringParam(PARAM_TEST_NAME, "short_text_request");
+    public static final StringParam PARAM_LONG_TEXT_REQUEST = new StringParam(PARAM_TEST_NAME, "long_text_request");
+    public static final StringParam PARAM_BITMAP_REQUEST = new StringParam(PARAM_TEST_NAME, "bitmap_request");
+    public static final StringParam PARAM_MIXED_REQUEST = new StringParam(PARAM_TEST_NAME, "mixed_request");
 
     public static final StringParam PART1 = new StringParam("p1", "param1");
     public static final StringParam PART2 = new StringParam("p2", "some param2");
