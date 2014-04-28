@@ -9,8 +9,8 @@ import java.util.List;
 
 import ru.jango.j0loader.ParamedLoader;
 import ru.jango.j0loader.Request;
-import ru.jango.j0loader.part.BitmapPart;
-import ru.jango.j0loader.part.Part;
+import ru.jango.j0loader.param.BitmapParam;
+import ru.jango.j0loader.param.Param;
 import ru.jango.j0util.LogUtil;
 
 public class ParamedLoaderTest extends AndroidTestCase {
@@ -41,19 +41,19 @@ public class ParamedLoaderTest extends AndroidTestCase {
         waitLoadingThreads(loader);
     }
 
-    private List<Part> getParts(boolean includeBmp) {
-        final List<Part> parts = new ArrayList<Part>();
+    private List<Param> getParts(boolean includeBmp) {
+        final List<Param> params = new ArrayList<Param>();
 
-        parts.add(Const.PART_TEST_SIMPLE_REQUEST);
-        parts.add(Const.PART1);
-        parts.add(Const.PART2);
-        parts.add(Const.PART3);
+        params.add(Const.PART_TEST_SIMPLE_REQUEST);
+        params.add(Const.PART1);
+        params.add(Const.PART2);
+        params.add(Const.PART3);
         if (includeBmp)
-            parts.add(new BitmapPart(Const.PARAM_BMP,
+            params.add(new BitmapParam(Const.PARAM_BMP,
                     Bitmap.CompressFormat.JPEG,
                     getBitmap()));
 
-        return parts;
+        return params;
     }
 
     private Bitmap getBitmap() {

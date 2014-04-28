@@ -2,11 +2,11 @@ package ru.jango.j0loader.test;
 
 import java.net.URI;
 
-import ru.jango.j0loader.part.StringPart;
+import ru.jango.j0loader.param.StringParam;
 
 public class Const {
 
-    public static final String BASE = "http://192.168.1.2/j0Loader/";
+    public static final String BASE = "http://192.168.1.3/j0Loader/";
 
     public static final URI IMG_SMALL = URI.create(BASE + "small.jpg");
     public static final URI IMG_NORMAL = URI.create(BASE + "normal.jpg");
@@ -18,12 +18,12 @@ public class Const {
     public static final String PARAM_BMP = "bmp";
     public static final String PARAM_TEST_NAME = "test_name";
 
-    public static final StringPart PART_TEST_SIMPLE_REQUEST = new StringPart(PARAM_TEST_NAME, "simple_request");
+    public static final StringParam PART_TEST_SIMPLE_REQUEST = new StringParam(PARAM_TEST_NAME, "simple_request");
 
-    public static final StringPart PART1 = new StringPart("p1", "param1");
-    public static final StringPart PART2 = new StringPart("p2", "some param2");
-    public static final StringPart PART3 = new StringPart("p3", "*школоло param3*");
-    public static final StringPart PART4_LONG = new StringPart("p4_long", genLongString(255));
+    public static final StringParam PART1 = new StringParam("p1", "param1");
+    public static final StringParam PART2 = new StringParam("p2", "some param2");
+    public static final StringParam PART3 = new StringParam("p3", "*школоло param3*");
+    public static final StringParam PART4_LONG = new StringParam("p4_long", genLongString(255));
 
     public static String genLongString(int len) {
         final StringBuilder sb = new StringBuilder();

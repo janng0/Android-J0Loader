@@ -9,18 +9,18 @@ import java.net.ProtocolException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 
-import ru.jango.j0loader.part.Part;
+import ru.jango.j0loader.param.Param;
 
 /**
  * Parametrized loader. A loader, witch allows not only to download data, but also to upload it.
- * Parameters for sending should be backed as a {@link java.util.List}<{@link ru.jango.j0loader.part.Part}> and
+ * Parameters for sending should be backed as a {@link java.util.List}<{@link ru.jango.j0loader.param.Param}> and
  * passed inside a {@link ru.jango.j0loader.Request} object.
  *
  * @param <T>   after postprocessing of the loaded data an object of type T will be created and passed into
  *              {@link ru.jango.j0loader.DataLoader.LoadingListener#processFinished(Request, byte[], Object)}
  */
 public abstract class ParamedLoader<T> extends DataLoader<T> {
-    // TODO look through the List<Part> and use HTTP GET in certain cases (not always POST)
+    // TODO look through the List<Param> and use HTTP GET in certain cases (not always POST)
 
 	@Override
 	protected InputStream openInputStream(Request request) throws IOException, URISyntaxException {
@@ -42,18 +42,18 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 		urlConnection.setRequestMethod("POST");
 		urlConnection.setRequestProperty("Connection", "Keep-Alive");
 		urlConnection.setRequestProperty("Cache-Control", "no-cache");
-		urlConnection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Part.BOUNDARY);
+		urlConnection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + Param.BOUNDARY);
 	}
 	
 	private void sendParams(Request request, HttpURLConnection urlConnection) throws IOException, URISyntaxException {
 		final OutputStream out = urlConnection.getOutputStream();          
-		out.write((Part.HYPHENS + Part.BOUNDARY + Part.RN).getBytes("UTF-8"));
+		out.write((Param.HYPHENS + Param.BOUNDARY + Param.RN).getBytes("UTF-8"));
 		
 		// generate entities and count content length for uploading
         final ArrayList<byte[]> entities = new ArrayList<byte[]>();
         long totalBytes = 0;
-		for (Part part : request.getRequestParams()) {
-			entities.add(part.encodeEntity());
+		for (Param param : request.getRequestParams()) {
+			entities.add(param.encodeEntity());
 			totalBytes += entities.get(entities.size()-1).length;
 		}
 		

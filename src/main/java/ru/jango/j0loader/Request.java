@@ -8,15 +8,15 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 
-import ru.jango.j0loader.part.Part;
-import ru.jango.j0loader.part.StringPart;
+import ru.jango.j0loader.param.Param;
+import ru.jango.j0loader.param.StringParam;
 import ru.jango.j0util.PathUtil;
 
 /**
  * Class-container for information, needed for loaders to work: <br>
  * <ul>
  * <li>{@link java.net.URI} of the request destination</li>
- * <li>{@link java.util.List}<{@link ru.jango.j0loader.part.Part}> with request parameters
+ * <li>{@link java.util.List}<{@link ru.jango.j0loader.param.Param}> with request parameters
  * (for HTTP POST and GET)</li>
  * <li>HTTP method - basically it is determined automatically, GET is in priority</li>
  * <li>size of the response data in bytes (value of HTTP response 'content-length' header,
@@ -28,7 +28,7 @@ public class Request {
     private URI uri;
     private Method method;
     private long responseContentLength;
-    private List<Part> params;
+    private List<Param> params;
 
     /**
      * Constructs new request with some internal variables. HTTP method will be set automatically.
@@ -67,7 +67,7 @@ public class Request {
      * @see #getRecommendedMethod()
      * @see #Request(java.net.URI, long, java.util.List)
      */
-    public Request(URI uri, List<Part> params) {
+    public Request(URI uri, List<Param> params) {
         this(uri, -1, params);
     }
 
@@ -81,7 +81,7 @@ public class Request {
      * @see #getComposedURI()
      * @see #getRecommendedMethod()
      */
-    public Request(URI uri, long responseContentLength, List<Part> params) {
+    public Request(URI uri, long responseContentLength, List<Param> params) {
         this.uri = PathUtil.safeStringToURI(uri.toString());
 
         setResponseContentLength(responseContentLength);
@@ -102,12 +102,12 @@ public class Request {
      *
      * @see #getRecommendedMethod()
      */
-    public void setRequestParams(List<Part> params) {
+    public void setRequestParams(List<Param> params) {
         this.params = params;
         this.method = getRecommendedMethod();
     }
 
-    public List<Part> getRequestParams() {
+    public List<Param> getRequestParams() {
         return params;
     }
 
@@ -141,8 +141,8 @@ public class Request {
         if (params == null)
             return false;
 
-        for (Part part : params)
-            if (!(part instanceof StringPart && ((StringPart) part).getData().length() < 255))
+        for (Param param : params)
+            if (!(param instanceof StringParam && ((StringParam) param).getData().length() < 255))
                 return false;
 
         return true;
@@ -159,9 +159,9 @@ public class Request {
             return null;
 
         final StringBuilder sb = new StringBuilder();
-        StringPart stringPart;
-        for (Part part : params) {
-            stringPart = (StringPart) part;
+        StringParam stringPart;
+        for (Param param : params) {
+            stringPart = (StringParam) param;
 
             sb.append(stringPart.getName());
             sb.append("=");
@@ -200,7 +200,7 @@ public class Request {
      * HTTP GET could be used if:
      * <ul>
      * <li>params were not set at all</li>
-     * <li>params list contains <b>only</b> {@link ru.jango.j0loader.part.StringPart}s</li>
+     * <li>params list contains <b>only</b> {@link ru.jango.j0loader.param.StringParam}s</li>
      * <li>final uri-string composed by initial {@link java.net.URI} and all params is not longer
      * the 255 chars - limitation of URI standards and HTTP protocol itself</li>
      * </ul>

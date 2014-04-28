@@ -1,14 +1,14 @@
-package ru.jango.j0loader.part;
+package ru.jango.j0loader.param;
 
 /**
- * A {@link ru.jango.j0loader.part.Part} wrapper for raw data. Default content type -
+ * A {@link Param} wrapper for raw data. Default content type -
  * 'application/octet-stream'.
  */
-public class DataPart extends Part {
+public class DataParam extends Param {
 	
 	private String filename;
 	
-	public DataPart(String name, String filename, byte[] data) {
+	public DataParam(String name, String filename, byte[] data) {
 		setContentType("application/octet-stream");
 
 		setRawData(data);
@@ -17,14 +17,14 @@ public class DataPart extends Part {
 	}
 	
 	@Override
-	public Part setName(String name) {
+	public Param setName(String name) {
 		super.setName(name);
 		setContentDisposition("form-data; name=\"" + name + "\"; filename=\"" + getFilename() + "\"");
 		
 		return this;
 	}
 
-	public Part setFilename(String filename) {
+	public Param setFilename(String filename) {
 		this.filename = filename;
 		setContentDisposition("form-data; name=\"" + getName() + "\"; filename=\"" + filename + "\"");
 		

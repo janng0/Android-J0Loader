@@ -14,9 +14,9 @@ import ru.jango.j0loader.DataLoader;
 import ru.jango.j0loader.JSONLoader;
 import ru.jango.j0loader.ParamedLoader;
 import ru.jango.j0loader.Request;
-import ru.jango.j0loader.part.BitmapPart;
-import ru.jango.j0loader.part.Part;
-import ru.jango.j0loader.part.StringPart;
+import ru.jango.j0loader.param.BitmapParam;
+import ru.jango.j0loader.param.Param;
+import ru.jango.j0loader.param.StringParam;
 import ru.jango.j0util.BmpUtil;
 import ru.jango.j0util.LogUtil;
 
@@ -76,14 +76,14 @@ public class OldTest extends AndroidTestCase {
 
         });
 
-        final ArrayList<Part> params1 = new ArrayList<Part>();
-        params1.add(new BitmapPart("image", Bitmap.CompressFormat.PNG, bmp1));
+        final ArrayList<Param> params1 = new ArrayList<Param>();
+        params1.add(new BitmapParam("image", Bitmap.CompressFormat.PNG, bmp1));
 
-        final ArrayList<Part> params2 = new ArrayList<Part>();
-        params2.add(new BitmapPart("image", Bitmap.CompressFormat.PNG, bmp2));
+        final ArrayList<Param> params2 = new ArrayList<Param>();
+        params2.add(new BitmapParam("image", Bitmap.CompressFormat.PNG, bmp2));
 
-        final ArrayList<Part> params3 = new ArrayList<Part>();
-        params3.add(new BitmapPart("image", Bitmap.CompressFormat.PNG, bmp3));
+        final ArrayList<Param> params3 = new ArrayList<Param>();
+        params3.add(new BitmapParam("image", Bitmap.CompressFormat.PNG, bmp3));
 
         final URI uri = new URI(UPLOAD);
         loader.addToQueue(new Request(uri, params1));
@@ -137,14 +137,14 @@ public class OldTest extends AndroidTestCase {
 
         });
 
-        final ArrayList<Part> params1 = new ArrayList<Part>();
-        params1.add(new StringPart("txt", "ololo trololo"));
+        final ArrayList<Param> params1 = new ArrayList<Param>();
+        params1.add(new StringParam("txt", "ololo trololo"));
 
-        final ArrayList<Part> params2 = new ArrayList<Part>();
-        params2.add(new StringPart("txt", "ololo2 trololo2"));
+        final ArrayList<Param> params2 = new ArrayList<Param>();
+        params2.add(new StringParam("txt", "ololo2 trololo2"));
 
-        final ArrayList<Part> params3 = new ArrayList<Part>();
-        params3.add(new StringPart("txt", "ololo3 trololo3"));
+        final ArrayList<Param> params3 = new ArrayList<Param>();
+        params3.add(new StringParam("txt", "ololo3 trololo3"));
 
         loader.addToQueue(new Request(uri, params1));
         loader.addToQueue(new Request(uri, params2));
@@ -200,17 +200,17 @@ public class OldTest extends AndroidTestCase {
 
         });
 
-        final ArrayList<Part> params1 = new ArrayList<Part>();
-        params1.add(new BitmapPart("image", Bitmap.CompressFormat.PNG, bmp1));
-        params1.add(new StringPart("txt", "ololo trololo"));
+        final ArrayList<Param> params1 = new ArrayList<Param>();
+        params1.add(new BitmapParam("image", Bitmap.CompressFormat.PNG, bmp1));
+        params1.add(new StringParam("txt", "ololo trololo"));
 
-        final ArrayList<Part> params2 = new ArrayList<Part>();
-        params2.add(new BitmapPart("image", Bitmap.CompressFormat.PNG, bmp2));
-        params2.add(new StringPart("txt", "ololo2 trololo2"));
+        final ArrayList<Param> params2 = new ArrayList<Param>();
+        params2.add(new BitmapParam("image", Bitmap.CompressFormat.PNG, bmp2));
+        params2.add(new StringParam("txt", "ololo2 trololo2"));
 
-        final ArrayList<Part> params3 = new ArrayList<Part>();
-        params3.add(new BitmapPart("image", Bitmap.CompressFormat.PNG, bmp3));
-        params3.add(new StringPart("txt", "ololo3 trololo3"));
+        final ArrayList<Param> params3 = new ArrayList<Param>();
+        params3.add(new BitmapParam("image", Bitmap.CompressFormat.PNG, bmp3));
+        params3.add(new StringParam("txt", "ololo3 trololo3"));
 
         final URI uri = new URI(UPLOAD);
         loader.addToQueue(new Request(uri, params1));
@@ -255,14 +255,14 @@ public class OldTest extends AndroidTestCase {
             }
         });
 
-        final ArrayList<Part> params1 = new ArrayList<Part>();
-        params1.add(new StringPart("txt", "ololo trololo"));
+        final ArrayList<Param> params1 = new ArrayList<Param>();
+        params1.add(new StringParam("txt", "ololo trololo"));
 
-        final ArrayList<Part> params2 = new ArrayList<Part>();
-        params2.add(new StringPart("txt", "ololo2 trololo2"));
+        final ArrayList<Param> params2 = new ArrayList<Param>();
+        params2.add(new StringParam("txt", "ololo2 trololo2"));
 
-        final ArrayList<Part> params3 = new ArrayList<Part>();
-        params3.add(new StringPart("txt", "ololo3 trololo3"));
+        final ArrayList<Param> params3 = new ArrayList<Param>();
+        params3.add(new StringParam("txt", "ololo3 trololo3"));
 
         loader.addToQueue(new Request(uri, params1));
         loader.addToQueue(new Request(uri, params2));

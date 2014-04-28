@@ -1,4 +1,4 @@
-package ru.jango.j0loader.part;
+package ru.jango.j0loader.param;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -10,11 +10,11 @@ import java.io.OutputStream;
  * be configured as you need.
  * <br><br>
  *
- * If you want a {@link ru.jango.j0loader.part.Part}-like wrapper (like
- * {@link ru.jango.j0loader.part.BitmapPart}) for some complicated structure (like
- * {@link android.graphics.Bitmap}), it's a good idea to subclass {@link ru.jango.j0loader.part.Part}.
+ * If you want a {@link Param}-like wrapper (like
+ * {@link BitmapParam}) for some complicated structure (like
+ * {@link android.graphics.Bitmap}), it's a good idea to subclass {@link Param}.
  */
-public class Part {
+public class Param {
 
     public static final String RN = "\r\n";
     public static final String HYPHENS = "--";
@@ -46,28 +46,28 @@ public class Part {
 		return contentDisposition;
 	}
 
-	public Part setRawData(byte[] rawData) {
+	public Param setRawData(byte[] rawData) {
 		this.rawData = rawData;
 		return this;
 	}
 
-	public Part setName(String name) {
+	public Param setName(String name) {
 		this.name = name;
 		return this;
 	}
 
-	public Part setContentType(String contentType) {
+	public Param setContentType(String contentType) {
 		this.contentType = contentType;
 		return this;
 	}
 
-	public Part setContentDisposition(String contentDisposition) {
+	public Param setContentDisposition(String contentDisposition) {
 		this.contentDisposition = contentDisposition;
 		return this;
 	}
 
 	/**
-	 * Writes this {@link ru.jango.j0loader.part.Part} into the specified {@link java.io.OutputStream}
+	 * Writes this {@link Param} into the specified {@link java.io.OutputStream}
      * as an HTTP-entity (with all headers, Black-Jack and others...)
      *
      * @see #encodeEntity()
@@ -77,7 +77,7 @@ public class Part {
 	}
 
 	/**
-	 * Transforms this {@link ru.jango.j0loader.part.Part} into an HTTP-entity of full value - adds all
+	 * Transforms this {@link Param} into an HTTP-entity of full value - adds all
      * needed headers and boundaries before and after and transforms all this into a byte array.
 	 */
 	public byte[] encodeEntity() {
