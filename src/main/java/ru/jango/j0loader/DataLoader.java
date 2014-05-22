@@ -333,7 +333,7 @@ public abstract class DataLoader<T> {
 	
     /**
 	 * Helper method for subclasses - actually does the loading. Also automatically calls
-     * {@link #postDownloadingUpdateProgress(Request, long, long)} during the work; handles
+     * {@link #onDownloadingUpdateProgress(Request, long, long)} during the work; handles
      * {@link #canWork()} and {@link #isCurrentCancelled()} flags.
 	 */
 	protected byte[] doLoad(Request request, InputStream in) throws IOException {
@@ -350,7 +350,7 @@ public abstract class DataLoader<T> {
 			boolean updateProgress = System.currentTimeMillis() > progressLastUpdated + PROGRESS_UPDATE_INTERVAL_MS;
 			if (request.getResponseContentLength()!=-1 && updateProgress) {
 				progressLastUpdated = System.currentTimeMillis();
-				postDownloadingUpdateProgress(request, totalRead, request.getResponseContentLength());
+				onDownloadingUpdateProgress(request, totalRead, request.getResponseContentLength());
 			}
 		}
 		buffer.flush();
@@ -406,9 +406,9 @@ public abstract class DataLoader<T> {
 
      * @see #isFullAsyncMode()
 	 */
-	protected void postLoadingStarted(final Request request) {
+	protected void onLoadingStarted(final Request request) {
 		if (!canPingListeners()) return;
-		logDebug("postLoadingStarted: " + request.getURI());
+		logDebug("onLoadingStarted: " + request.getURI());
 
         if (isFullAsyncMode()) doPostLoadingStarted(request);
         else mainThreadHandler.post(new Runnable() {
@@ -433,9 +433,9 @@ public abstract class DataLoader<T> {
      *
      * @see #isFullAsyncMode()
      */
-	protected void postUploadingUpdateProgress(final Request request, final long uploadedBytes, final long totalBytes) {
+	protected void onUploadingUpdateProgress(final Request request, final long uploadedBytes, final long totalBytes) {
 		if (!canPingListeners()) return;
-		logDebug("postUploadingUpdateProgress: " + request.getURI() + " : "
+		logDebug("onUploadingUpdateProgress: " + request.getURI() + " : "
 					+ "uploaded " + uploadedBytes + "bytes; "
 					+ "total " + totalBytes + "bytes");
 
@@ -461,9 +461,9 @@ public abstract class DataLoader<T> {
      *
      * @see #isFullAsyncMode()
      */
-    protected void postDownloadingUpdateProgress(final Request request, final long loadedBytes, final long totalBytes) {
+    protected void onDownloadingUpdateProgress(final Request request, final long loadedBytes, final long totalBytes) {
         if (!canPingListeners()) return;
-        logDebug("postDownloadingUpdateProgress: " + request.getURI() + " : "
+        logDebug("onDownloadingUpdateProgress: " + request.getURI() + " : "
                 + "downloaded " + loadedBytes + "bytes; "
                 + "total " + totalBytes + "bytes");
 
@@ -489,9 +489,9 @@ public abstract class DataLoader<T> {
      *
      * @see #isFullAsyncMode()
      */
-	protected void postProcessFinished(final Request request, final byte[] rawData, final T data) {
+	protected void onProcessFinished(final Request request, final byte[] rawData, final T data) {
 		if (!canPingListeners()) return;
-		logDebug("postProcessFinished: " + request.getURI() + " : "
+		logDebug("onProcessFinished: " + request.getURI() + " : "
 					+ rawData.length + "bytes");
 
         if (isFullAsyncMode()) doPostProcessFinished(request, rawData, data);
@@ -515,10 +515,10 @@ public abstract class DataLoader<T> {
      *
      * @see #isFullAsyncMode()
      */
-	protected void postProcessFailed(final Request request, final Exception e) {
+	protected void onProcessFailed(final Request request, final Exception e) {
 		if (!canPingListeners()) return;
 		if (isDebug()) e.printStackTrace();
-		logDebug("postProcessFailed: " + request.getURI() + " : " + e);
+		logDebug("onProcessFailed: " + request.getURI() + " : " + e);
 
         if (isFullAsyncMode()) doPostProcessFailed(request, e);
         else mainThreadHandler.post(new Runnable() {
@@ -600,9 +600,9 @@ public abstract class DataLoader<T> {
                 currCancelled = false;
 
 				try {
-					postLoadingStarted(request);
+					onLoadingStarted(request);
 					loadInBackground(request);
-				} catch (Exception e) { postProcessFailed(request, e); }
+				} catch (Exception e) { onProcessFailed(request, e); }
 
 				LogUtil.logMemoryUsage();
 			}

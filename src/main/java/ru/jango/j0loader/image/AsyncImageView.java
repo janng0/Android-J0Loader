@@ -15,6 +15,18 @@ import ru.jango.j0loader.DataLoader;
 import ru.jango.j0loader.Request;
 import ru.jango.j0util.PathUtil;
 
+/**
+ * Special extension of {@link android.widget.ImageView} that could be used with
+ * {@link ru.jango.j0loader.image.ImageLoader}. Also it automatically draws a special drawing indicator while listening to
+ * {@link ru.jango.j0loader.DataLoader.LoadingListener#downloadingUpdateProgress(ru.jango.j0loader.Request, long, long)}.
+ * <p>
+ * <b>ATTENTION</b>: Automatically removes itself from {@link ru.jango.j0loader.image.ImageLoader}'s listeners
+ * when is removed from interface (in {@link #onDetachedFromWindow()} calls {@link #setImageLoader(ImageLoader)} with NULL).
+ * So when using it in {@link android.widget.ListView} basically everything goes well, but just in case pay attention and
+ * use {@link #setAutoDetachLoader(boolean)} or manually reset {@link ru.jango.j0loader.image.ImageLoader} via
+ * {@link #setImageLoader(ImageLoader)} on each {@link android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)}
+ * call.
+ */
 public class AsyncImageView extends ImageView {
 	
 	public static final float DEFAULT_LOADING_INDICATOR_BOLDNESS = 7;
@@ -29,6 +41,7 @@ public class AsyncImageView extends ImageView {
     private final Paint failIndicatorPaint = new Paint();
 
 	private Status status;
+    private boolean autoDetachLoader;
     private boolean showIndicator;
 	private float loadingIndBoldness;
 	private int loadingIndBGColor;
@@ -110,6 +123,7 @@ public class AsyncImageView extends ImageView {
 		indMaxSize = DEFAULT_INDICATOR_MAX_SIZE;
 
         status = Status.UNKNOWN;
+        autoDetachLoader = true;
         showIndicator = true;
 		imageSet = false;
 		initPaints();
@@ -151,7 +165,9 @@ public class AsyncImageView extends ImageView {
 	@Override
 	protected void onDetachedFromWindow() {
 		super.onDetachedFromWindow();
-		setImageLoader(null);
+
+		if (autoDetachLoader)
+            setImageLoader(null);
 	}
 	
 	////////////////////////////////////////////////////////////////////////
@@ -359,6 +375,24 @@ public class AsyncImageView extends ImageView {
      */
     public void setShowIndicator(boolean showIndicator) {
         this.showIndicator = showIndicator;
+    }
+
+    /**
+     * AsyncImageView automatically removes itself from {@link ru.jango.j0loader.image.ImageLoader}'s listeners when
+     * is removed from interface (in {@link #onDetachedFromWindow()} calls {@link #setImageLoader(ImageLoader)}
+     * with NULL). To avoid this - use {@link #setAutoDetachLoader(boolean)} with FALSE param.
+     */
+    public boolean shouldAutoDetachLoader() {
+        return autoDetachLoader;
+    }
+
+    /**
+     * AsyncImageView automatically removes itself from {@link ru.jango.j0loader.image.ImageLoader}'s listeners when
+     * is removed from interface (in {@link #onDetachedFromWindow()} calls {@link #setImageLoader(ImageLoader)}
+     * with NULL). To avoid this - use this method with FALSE param.
+     */
+    public void setAutoDetachLoader(boolean autoDetachLoader) {
+        this.autoDetachLoader = autoDetachLoader;
     }
 
 }

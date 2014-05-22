@@ -65,7 +65,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 	
 	/**
      * Write entities into specified {@link java.io.OutputStream}. Also automatically calls
-     * {@link #postUploadingUpdateProgress(Request, long, long)} during the work; handles
+     * {@link #onUploadingUpdateProgress(Request, long, long)} during the work; handles
      * {@link #canWork()} and {@link #isCurrentCancelled()} flags.
 	 */
 	protected void writeEntities(Request request, OutputStream out, ArrayList<byte[]> entities, long totalBytes) throws IOException {
@@ -85,7 +85,7 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
 				updateProgress = System.currentTimeMillis() > progressLastUpdated + PROGRESS_UPDATE_INTERVAL_MS;
 				if (updateProgress) {
 					progressLastUpdated = System.currentTimeMillis();
-					postUploadingUpdateProgress(request, uploadedBytes, totalBytes);
+					onUploadingUpdateProgress(request, uploadedBytes, totalBytes);
 				}
 			}
 			

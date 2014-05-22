@@ -164,7 +164,7 @@ public class ParamedLoaderTest extends AndroidTestCase {
         @Override
         protected void loadInBackground(Request request) throws Exception {
             final byte[] response = load(request);
-            postProcessFinished(request, response, new String(response, "UTF-8"));
+            onProcessFinished(request, response, new String(response, "UTF-8"));
         }
     }
 

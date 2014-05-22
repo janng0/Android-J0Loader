@@ -255,7 +255,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 	    	LogUtil.i(ImageLoader.class, "loading from cache: "+request.getURI());
 				
 			final byte[] raw = getCache().get(request.getURI());
-			postProcessFinished(request, raw, BitmapFactory.decodeByteArray(raw, 0, raw.length));
+			onProcessFinished(request, raw, BitmapFactory.decodeByteArray(raw, 0, raw.length));
 			return true;
 		}
 
@@ -280,7 +280,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
         getCache().put(request.getURI(), rawData);
         LogUtil.i(ImageLoader.class, "added to cache; cache size bytes: " + getCache().size());
 
-		postProcessFinished(request, rawData, bmp);
+		onProcessFinished(request, rawData, bmp);
 	}
 	
 	@Override
@@ -295,9 +295,9 @@ public class ImageLoader extends DataLoader<Bitmap> {
 				final Request request = cacheQueue.next();
 				
 				try {
-					postLoadingStarted(request);
+					onLoadingStarted(request);
 					loadInBackground(request);
-				} catch (Exception e) { postProcessFailed(request, e); }
+				} catch (Exception e) { onProcessFailed(request, e); }
 
 				LogUtil.logMemoryUsage();
 			}
