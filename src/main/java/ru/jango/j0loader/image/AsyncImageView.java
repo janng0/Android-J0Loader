@@ -2,18 +2,17 @@ package ru.jango.j0loader.image;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.RectF;
 import android.util.AttributeSet;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
 import java.net.URI;
 
 import ru.jango.j0loader.DataLoader;
 import ru.jango.j0loader.Request;
 import ru.jango.j0util.PathUtil;
+import ru.jango.j0widget.TorusIndicator;
 
 /**
  * Special extension of {@link android.widget.ImageView} that could be used with
@@ -27,31 +26,17 @@ import ru.jango.j0util.PathUtil;
  * {@link #setImageLoader(ImageLoader)} on each {@link android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)}
  * call.
  */
-public class AsyncImageView extends ImageView {
-	
-	public static final float DEFAULT_LOADING_INDICATOR_BOLDNESS = 7;
-	public static final int DEFAULT_LOADING_INDICATOR_BACKGROUND_COLOR = Color.DKGRAY;
-	public static final int DEFAULT_LOADING_INDICATOR_COLOR = Color.LTGRAY;
-    public static final int DEFAULT_FAIL_INDICATOR_COLOR = Color.rgb(255, 100, 100);
-	public static final int DEFAULT_INDICATOR_MAX_SIZE = 120;
+public class AsyncImageView extends RelativeLayout {
 
-	private final RectF loadingIndicatorRect = new RectF();
-	private final Paint loadingIndicatorBGPaint = new Paint();
-	private final Paint loadingIndicatorPaint = new Paint();
-    private final Paint failIndicatorPaint = new Paint();
+    private ImageView imageView;
+    private TorusIndicator indicator;
 
 	private Status status;
     private boolean autoDetachLoader;
     private boolean showIndicator;
-	private float loadingIndBoldness;
-	private int loadingIndBGColor;
-	private int loadingIndColor;
-    private int failIndColor;
-	private int indMaxSize;
 
 	private ImageLoader loader;
 	private URI imageUri;
-	private int progress;
 	private boolean imageSet;
 
     public enum Status {
@@ -65,102 +50,77 @@ public class AsyncImageView extends ImageView {
 			if (!PathUtil.uriEquals(imageUri, request.getURI())) return;
 			if (!imageSet) return;
 			
-			setImageBitmap(null);
-			progress = 0;
+			imageView.setImageBitmap(null);
+            indicator.setProgress(0);
 			imageSet = false;
 
             status = Status.LOADING;
-			invalidate();
+            if (showIndicator) indicator.setVisibility(View.VISIBLE);
 		}
 
 		@Override
 		public void downloadingUpdateProgress(Request request, long loadedBytes, long totalBytes) {
 			if (!PathUtil.uriEquals(imageUri, request.getURI())) return;
 			if (imageSet) return;
-			
-			progress =  (int) ((loadedBytes * 100) / totalBytes);
+
+            indicator.setProgress((int) ((loadedBytes * 100) / totalBytes));
             status = Status.LOADING;
-			invalidate();
+            if (showIndicator) indicator.setVisibility(View.VISIBLE);
 		}
 
 		@Override
 		public void processFinished(Request request, byte[] rawData, Bitmap data) {
 			if (!PathUtil.uriEquals(imageUri, request.getURI())) return;
 			if (imageSet) return;
-			
-			progress = 100;
+
+            indicator.setProgress(100);
 			imageSet = true;
 
             status = Status.LOADED;
-			setImageBitmap(data);
-		}
+			imageView.setImageBitmap(data);
+            indicator.setVisibility(View.GONE);
+        }
 
 		@Override
 		public void processFailed(Request request, Exception e) {
             if (!PathUtil.uriEquals(imageUri, request.getURI())) return;
             if (imageSet) return;
 
-            progress = 0;
+            indicator.setProgress(-1);
             imageSet = false;
 
             status = Status.FAILED;
-            invalidate();
+            if (showIndicator) indicator.setVisibility(View.VISIBLE);
         }
 
 		@Override
 		public void uploadingUpdateProgress(Request request, long uploadedBytes, long totalBytes) {}
 	};
 	
-	public AsyncImageView(Context context) { super(context); init(); }
-	public AsyncImageView(Context context, AttributeSet attrs) { super(context, attrs); init(); }
-	public AsyncImageView(Context context, AttributeSet attrs, int defStyle) { super(context, attrs, defStyle);	init(); }
+	public AsyncImageView(Context context) { super(context); init(context); }
+	public AsyncImageView(Context context, AttributeSet attrs) { super(context, attrs); init(context); }
+	public AsyncImageView(Context context, AttributeSet attrs, int defStyle) { super(context, attrs, defStyle);	init(context); }
 
-	private void init() {
-		loadingIndBoldness = DEFAULT_LOADING_INDICATOR_BOLDNESS;
-		loadingIndBGColor = DEFAULT_LOADING_INDICATOR_BACKGROUND_COLOR;
-		loadingIndColor = DEFAULT_LOADING_INDICATOR_COLOR;
-        failIndColor = DEFAULT_FAIL_INDICATOR_COLOR;
-		indMaxSize = DEFAULT_INDICATOR_MAX_SIZE;
-
+	private void init(Context ctx) {
         status = Status.UNKNOWN;
         autoDetachLoader = true;
-        showIndicator = true;
 		imageSet = false;
-		initPaints();
+        showIndicator = true;
+
+        initLayout(ctx);
 	}
 
-	private void initPaints() {
-		fillLoadingIndicatorBGPaint(loadingIndicatorBGPaint);
-		fillLoadingIndicatorPaint(loadingIndicatorPaint);
-        fillFailIndicatorPaint(failIndicatorPaint);
-	}
+    private void initLayout(Context ctx) {
+        imageView = new ImageView(ctx);
+        imageView.setLayoutParams(new RelativeLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
+        imageView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
-	@Override
-	protected void onDraw(Canvas canvas) {
-		super.onDraw(canvas);
-		if (!showIndicator || imageSet)
-			return;
+        indicator = new TorusIndicator(ctx);
+        indicator.setLayoutParams(new RelativeLayout.LayoutParams(LayoutParams.FILL_PARENT, LayoutParams.FILL_PARENT));
 
-        switch (status) {
-            case LOADING:
-                canvas.drawArc(loadingIndicatorRect, 0, 360, false, loadingIndicatorBGPaint);
-                if (progress != 0)
-                    canvas.drawArc(loadingIndicatorRect, 0, progress * 360 / 100, false, loadingIndicatorPaint);
-                break;
-
-            case FAILED:
-                canvas.drawArc(loadingIndicatorRect, 0, 360, false, failIndicatorPaint);
-                break;
-        }
-	}
-
-	@Override
-	protected void onSizeChanged(int w, int h, int oldW, int oldH) {
-		super.onSizeChanged(w, h, oldW, oldH);
-		initPaints();
-
-		getLoadingIndicatorRect(loadingIndicatorRect);
-	}
+        addView(imageView);
+        addView(indicator);
+    }
 
 	@Override
 	protected void onDetachedFromWindow() {
@@ -172,64 +132,20 @@ public class AsyncImageView extends ImageView {
 	
 	////////////////////////////////////////////////////////////////////////
 	//
-	// Drawing methods
-	//
-	////////////////////////////////////////////////////////////////////////
-
-	private int getIndicatorSize() {
-		return Math.min(Math.min(getWidth(), getHeight()), indMaxSize);
-	}
-
-    /**
-     * Just centers rect inside view.
-     */
-	private RectF getIndicatorRect(final RectF ret) {
-		ret.set((getMeasuredWidth() - getIndicatorSize()) / 2,
-                (getMeasuredHeight() - getIndicatorSize()) / 2,
-                (getMeasuredWidth() + getIndicatorSize()) / 2,
-                (getMeasuredHeight() + getIndicatorSize()) / 2);
-
-		return ret;
-	}
-
-	private RectF getLoadingIndicatorRect(final RectF ret) {
-		getIndicatorRect(ret);
-		ret.inset(loadingIndBoldness / 2, loadingIndBoldness / 2);
-
-		return ret;
-	}
-
-	private void fillStandardPaint(float strokeWidth, int color, final Paint paint) {
-		paint.setStrokeWidth(strokeWidth);
-		paint.setColor(color);
-		paint.setStyle(Paint.Style.STROKE);
-		paint.setDither(true);
-		paint.setAntiAlias(true);
-	}
-
-	private Paint fillLoadingIndicatorBGPaint(final Paint paint) {
-		fillStandardPaint(loadingIndBoldness, loadingIndBGColor, paint);
-		return paint;
-	}
-
-	private Paint fillLoadingIndicatorPaint(final Paint paint) {
-		fillStandardPaint(loadingIndBoldness, loadingIndColor, paint);
-		return paint;
-	}
-
-    private Paint fillFailIndicatorPaint(final Paint paint) {
-        fillStandardPaint(loadingIndBoldness, failIndColor, paint);
-        return paint;
-    }
-
-	////////////////////////////////////////////////////////////////////////
-	//
 	// Setters and getters
 	//
 	////////////////////////////////////////////////////////////////////////
 
     public Status getStatus() {
         return status;
+    }
+
+    public ImageView getImageView() {
+        return imageView;
+    }
+
+    public TorusIndicator getLoadingIndicator() {
+        return indicator;
     }
 
     /**
@@ -266,14 +182,12 @@ public class AsyncImageView extends ImageView {
 			return;
 
 		imageUri = uri;
-		progress = 0;
+		indicator.setProgress(0);
 
 		if (imageSet) {
-			setImageBitmap(null);
+			imageView.setImageBitmap(null);
 			imageSet = false;
 		}
-		
-		invalidate();
 	}
 
     /**
@@ -281,86 +195,6 @@ public class AsyncImageView extends ImageView {
      */
 	public URI getImageURI() {
 		return imageUri;
-	}
-
-    /**
-     * Sets boldness of the line of the indicator torus.
-     */
-	public void setLoadingIndicatorBoldness(float boldness) {
-		loadingIndBoldness = boldness;
-		getLoadingIndicatorRect(loadingIndicatorRect);
-		invalidate();
-	}
-
-    /**
-     * Returns boldness of the line of the indicator torus.
-     */
-	public float getLoadingIndicatorBoldness() {
-		return loadingIndBoldness;
-	}
-
-    /**
-     * Sets color of the background torus.
-     */
-	public void setLoadingIndicatorBackgroundColor(int color) {
-		loadingIndBGColor = color;
-		fillLoadingIndicatorBGPaint(loadingIndicatorBGPaint);
-		invalidate();
-	}
-
-    /**
-     * Returns color of the background torus.
-     */
-	public int getLoadingIndicatorBackgroundColor() {
-		return loadingIndBGColor;
-	}
-
-    /**
-     * Sets color of the foreground torus.
-     */
-	public void setLoadingIndicatorColor(int color) {
-		loadingIndColor = color;
-		fillLoadingIndicatorPaint(loadingIndicatorPaint);
-		invalidate();
-	}
-
-    /**
-     * Returns color of the foreground torus.
-     */
-	public int getLoadingIndicatorColor() {
-		return loadingIndColor;
-	}
-
-    /**
-     * Sets color of the fail indicator torus.
-     */
-    public int getFailIndicatorColor() {
-        return failIndColor;
-    }
-
-    /**
-     * Returns color of the fail indicator torus.
-     */
-    public void setFailIndicatorColor(int failIndColor) {
-        this.failIndColor = failIndColor;
-    }
-
-    /**
-     * Indicator size is calculated based on current view size, but it could be
-     * limited by this method.
-     */
-    public void setMaxIndicatorSize(int sizePx) {
-		indMaxSize = sizePx;
-		getLoadingIndicatorRect(loadingIndicatorRect);
-		invalidate();
-	}
-
-    /**
-     * Indicator size is calculated based on current view size, but it could be
-     * limited by this value.
-     */
-	public int getMaxIndicatorSize() {
-		return indMaxSize;
 	}
 
     /**
@@ -375,6 +209,7 @@ public class AsyncImageView extends ImageView {
      */
     public void setShowIndicator(boolean showIndicator) {
         this.showIndicator = showIndicator;
+        indicator.setVisibility(status != Status.LOADED && showIndicator ? View.VISIBLE : View.GONE);
     }
 
     /**

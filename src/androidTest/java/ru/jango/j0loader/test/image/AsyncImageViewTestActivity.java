@@ -9,14 +9,13 @@ import android.view.ViewGroup.LayoutParams;
 import java.net.URI;
 
 import ru.jango.j0loader.Request;
-import ru.jango.j0loader.test.Settings;
 import ru.jango.j0loader.image.AsyncImageView;
 import ru.jango.j0loader.image.ImageLoader;
 import ru.jango.j0loader.image.cache.NullCache;
 
 public class AsyncImageViewTestActivity extends Activity {
 
-    private final String BASE = "http://192.168.1.4/j0Loader/";
+    private final String BASE = "http://192.168.1.3/j0Loader/";
 
     private final URI IMG_SMALL = URI.create(BASE + "small.jpg");
     private final URI IMG_NORMAL = URI.create(BASE + "normal.jpg");
@@ -59,11 +58,11 @@ public class AsyncImageViewTestActivity extends Activity {
     }
 
     private void testImageViewSettings() {
-//        img.setLoadingIndicatorBackgroundColor(Color.RED);
-//        img.setLoadingIndicatorColor(Color.RED);
-//        img.setFailIndicatorColor(Color.GREEN);
-//        img.setLoadingIndicatorBoldness(20);
-//        img.setMaxIndicatorSize(300);
+//        img.getLoadingIndicator().setIndicatorBackgroundColor(Color.RED);
+//        img.getLoadingIndicator().setColor(Color.RED);
+//        img.getLoadingIndicator().setFailColor(Color.GREEN);
+//        img.getLoadingIndicator().setBoldness(20);
+//        img.getLoadingIndicator().setMaxSize(300);
 //        img.setShowIndicator(false);
     }
 

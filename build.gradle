@@ -26,11 +26,12 @@ android {
 
 dependencies {
     compile files('libs/J0Util-1.0.jar')
+    compile files('libs/J0Widget-1.0.2.jar')
     compile 'com.android.support:appcompat-v7:+'
     androidTestCompile 'junit:junit:4.8.1@jar'
 }
 
-version '1.1.1'
+version '1.1.2'
 
 task makeJavadoc(type: Javadoc, dependsOn: ':J0Loader:compileReleaseJava') {
     destinationDir = project.file('result-jars/javadoc')
