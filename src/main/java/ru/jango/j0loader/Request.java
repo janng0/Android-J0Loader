@@ -12,7 +12,6 @@ import java.util.List;
 
 import ru.jango.j0loader.param.Param;
 import ru.jango.j0loader.param.StringParam;
-import ru.jango.j0util.PathUtil;
 
 /**
  * Class-container for information, needed for loaders to work: <br>
@@ -84,7 +83,7 @@ public class Request {
      * @see #getRecommendedMethod()
      */
     public Request(URI uri, long responseContentLength, List<Param> params) {
-        this.uri = PathUtil.safeStringToURI(uri.toString());
+        this.uri = uri;
 
         setResponseContentLength(responseContentLength);
         setRequestParams(params);
