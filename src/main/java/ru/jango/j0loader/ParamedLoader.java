@@ -38,7 +38,6 @@ public abstract class ParamedLoader<T> extends DataLoader<T> {
         super.configURLConnection(urlConnection);
         request.getMethod().configURLConnection(urlConnection);
 
-//        urlConnection.setChunkedStreamingMode(0);
         urlConnection.setRequestProperty("Connection", "Keep-Alive");
         urlConnection.setRequestProperty("Cache-Control", "no-cache");
 	}

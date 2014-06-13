@@ -406,18 +406,18 @@ public abstract class DataLoader<T> {
 
      * @see #isFullAsyncMode()
 	 */
-	protected void onLoadingStarted(final Request request) {
+	protected void onProcessStarted(final Request request) {
 		if (!canPingListeners()) return;
-		logDebug("onLoadingStarted: " + request.getURI());
+		logDebug("onProcessStarted: " + request.getURI());
 
-        if (isFullAsyncMode()) doPostLoadingStarted(request);
+        if (isFullAsyncMode()) doPostProcessStarted(request);
         else mainThreadHandler.post(new Runnable() {
 			@Override
-			public void run() { doPostLoadingStarted(request); }
+			public void run() { doPostProcessStarted(request); }
         });
 	}
 
-    private void doPostLoadingStarted(Request request) {
+    private void doPostProcessStarted(Request request) {
         for (LoadingListener<T> listener : listeners)
             listener.processStarted(request);
     }
@@ -600,7 +600,7 @@ public abstract class DataLoader<T> {
                 currCancelled = false;
 
 				try {
-					onLoadingStarted(request);
+					onProcessStarted(request);
 					loadInBackground(request);
 				} catch (Exception e) { onProcessFailed(request, e); }
 

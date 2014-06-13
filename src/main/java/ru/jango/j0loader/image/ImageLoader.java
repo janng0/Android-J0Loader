@@ -295,7 +295,7 @@ public class ImageLoader extends DataLoader<Bitmap> {
 				final Request request = cacheQueue.next();
 				
 				try {
-					onLoadingStarted(request);
+					onProcessStarted(request);
 					loadInBackground(request);
 				} catch (Exception e) { onProcessFailed(request, e); }
 
